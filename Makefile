@@ -6,10 +6,10 @@ all: $(LIB) $(EXAMPLES)
 $(EXAMPLES): $(LIB)
 
 $(LIB):
-	cd tasks && make $(MAKE_ARGS)
+	cd tasks && $(MAKE) $(MAKE_ARGS)
 
 $(EXAMPLES):
-	cd examples && make $(MAKE_ARGS)
+	cd examples && $(MAKE) $(MAKE_ARGS)
 
 clean:
 	cd tasks && make clean && cd ..
