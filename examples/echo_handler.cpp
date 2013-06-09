@@ -8,6 +8,10 @@
 
 #include <echo_handler.h>
 
+#ifdef PROFILER
+#include <google/profiler.h>
+#endif
+
 std::atomic<int> stats::m_req_count;
 std::atomic<int> stats::m_clients;
 
@@ -72,8 +76,14 @@ bool stats::handle_event(tasks::worker* worker, int events) {
 }
 
 int main(int argc, char** argv) {
+#ifdef PROFILER
+	ProfilerStart("echoserver.prof");
+#endif
 	stats s;
 	tasks::acceptor<echo_handler> srv(12345);
 	tasks::dispatcher::get_instance()->run(2, &srv, &s);
+#ifdef PROFILER
+	ProfilerStop();
+#endif
 	return 0;
 }
