@@ -47,7 +47,6 @@ namespace tasks {
 			int client = accept(get_fd(), (struct sockaddr *) &addr, &len);
 			if (client < 0) {
 				terr("acceptor: accept failed with errno " << errno << std::endl);
-				return false;
 			} else {
 				tdbg("acceptor: new client fd " << client << std::endl);
 				T* task = new T(client);
