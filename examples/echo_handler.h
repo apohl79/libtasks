@@ -22,6 +22,7 @@ public:
 	}
 		
 	static void inc_clients() {
+		std::cout << "client " << m_clients << std::endl;
 		m_clients++;
 	}
 
