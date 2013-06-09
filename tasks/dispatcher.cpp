@@ -48,7 +48,8 @@ namespace tasks {
 			std::shared_ptr<worker> w = std::make_shared<worker>(i);
 			assert(nullptr != w);
 			m_workers.push_back(w);
-			if (i > 0) { // do not add the first worker, as we make it the leader
+			// Do not add the first worker, as we make it the leader in run()
+			if (i > 0) {
 				m_worker_queue.push(i);
 			}
 		}

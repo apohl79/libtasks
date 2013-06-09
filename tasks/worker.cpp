@@ -43,8 +43,6 @@ namespace tasks {
 	}
 
 	void worker::promote_leader() {
-		// Multiple IO events could be fired by one event loop iteration. As we promote the next leader
-		// after the 
 		std::shared_ptr<worker> w = dispatcher::get_instance()->get_free_worker();
 		if (nullptr != w) {
 			// If we find a free worker, we promote it to the next leader. This thread stays leader
@@ -63,7 +61,7 @@ namespace tasks {
 			if (!m_leader) {
 				tdbg(get_string() << ": waiting..." << std::endl);
 				std::unique_lock<std::mutex> lock(m_work_mutex);
-				// use wait_for to detect shutdowns
+				// Use wait_for to check the term flag
 				while (m_work_cond.wait_for(lock, std::chrono::milliseconds(100)) == std::cv_status::timeout
 					   && !m_leader
 					   && !m_term) {}
