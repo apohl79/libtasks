@@ -21,7 +21,7 @@ namespace tasks {
 	dispatcher::dispatcher() {
 		// Initialize the event loop structure
 		ev_default_loop(0);
-		// Create one worker per CPU 
+		// Create workers 
 		m_num_workers = sysconf(_SC_NPROCESSORS_ONLN) * 2;
 		tdbg("dispatcher: number of cpus is " << m_num_workers << std::endl);
 		// The first thread becomes the leader
