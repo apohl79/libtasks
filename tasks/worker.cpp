@@ -19,9 +19,6 @@
 
 #include <tasks/worker.h>
 #include <tasks/dispatcher.h>
-#include <tasks/task.h>
-#include <tasks/io_task.h>
-#include <tasks/timer_task.h>
 #include <chrono>
 
 namespace tasks {
@@ -29,7 +26,7 @@ namespace tasks {
 	worker::worker(int id) : m_id(id), m_thread(&worker::run, this) {
 		m_term.store(false);
 		// Initialize and add the threads async watcher
-		ev_async_init(&m_signal_watcher, ev_async_callback);
+		ev_async_init(&m_signal_watcher, tasks_async_callback);
 		m_signal_watcher.data = new task_func_queue;
 		ev_async_start(ev_default_loop(0), &m_signal_watcher);
 	}
@@ -72,41 +69,21 @@ namespace tasks {
 				tdbg(get_string() << ": running event loop" << std::endl);
 				ev_loop(m_loop->loop, EVLOOP_ONESHOT);
 				// Check if events got fired
-				if (!m_io_events_queue.empty() || !m_timer_events_queue.empty()) {
+				if (!m_events_queue.empty()) {
 					// Now promote the next leader and call the event handlers
 					promote_leader();
-
-					// IO
-					while (!m_io_events_queue.empty()) {
-						io_event event = m_io_events_queue.front();
+					// Handle events
+					while (!m_events_queue.empty()) {
+						event event = m_events_queue.front();
 						if (event.task->handle_event(this, event.revents)) {
-							// On success we activate the watcher again. 
+							// We activate the watcher again as true was returned. 
 							event.task->start_watcher(this);
 						} else {
-							if (event.task->delete_after_error()) {
+							if (event.task->auto_delete()) {
 								delete event.task;
 							}
 						}
-						m_io_events_queue.pop();
-					}
-					
-					// TIMERS
-					while (!m_timer_events_queue.empty()) {
-						timer_task* task = m_timer_events_queue.front();
-						if (task->handle_event(this, 0)) {
-							if (task->get_repeat() > 0) {
-								// On success we activate the watcher again.
-								task->start_watcher(this);
-							} else {
-								// Non repeatable tasks will be deleted here.
-								delete task;
-							}
-						} else {
-							if (task->delete_after_error()) {
-								delete task;
-							}
-						}
-						m_timer_events_queue.pop();
+						m_events_queue.pop();
 					}
 				}
 			}
@@ -122,21 +99,6 @@ namespace tasks {
 				}
 			}
 		}
-	}
-
-	void worker::handle_io_event(ev_io* watcher, int revents) {
-		io_task* task = (tasks::io_task*) watcher->data;
-		assert(nullptr != task);
-		task->stop_watcher(this);
-		io_event event = {task, revents};
-		m_io_events_queue.push(event);
-	}
-
-	void worker::handle_timer_event(ev_timer* watcher) {
-		timer_task* task = (tasks::timer_task*) watcher->data;
-		assert(nullptr != task);
-		task->stop_watcher(this);
-		m_timer_events_queue.push(task);
 	}
 
 } // tasks

@@ -20,6 +20,7 @@
 #ifndef _TASKS_WORKER_H_
 #define _TASKS_WORKER_H_
 
+#include <tasks/task.h>
 #include <tasks/logging.h>
 #include <tasks/ev_wrapper.h>
 #include <thread>
@@ -35,8 +36,6 @@
 namespace tasks {
 
 	class task;
-	class io_task;
-	class timer_task;
 
 	// Needed to use std::unique_ptr<>
 	class loop_wrapper {
@@ -55,8 +54,8 @@ namespace tasks {
 	// Put all io events into a queue instead of handling them directly from handle_io_event as multiple
 	// events can fire and we want to promote the next leader after the ev_loop call returns to avoid calling
 	// it from multiple threads.
-	struct io_event {
-		tasks::io_task* task;
+	struct event {
+		tasks::task* task;
 		int revents;
 	};
 		
@@ -103,6 +102,10 @@ namespace tasks {
 			m_term.store(true);
 			m_work_cond.notify_one();
 		}
+
+		inline void add_event(event e) {
+			m_events_queue.push(e);
+		}
 		
 		void handle_io_event(ev_io* watcher, int revents);
 		void handle_timer_event(ev_timer* watcher);
@@ -115,8 +118,7 @@ namespace tasks {
 		std::atomic<bool> m_term;
 		std::mutex m_work_mutex;
 		std::condition_variable m_work_cond;
-		std::queue<io_event> m_io_events_queue;
-		std::queue<timer_task*> m_timer_events_queue;
+		std::queue<event> m_events_queue;
 
 		// Every worker has an async watcher to be able to call into the leader thread context.
 		ev_async m_signal_watcher;
@@ -126,13 +128,17 @@ namespace tasks {
 	};
 	
 	/* CALLBACKS */
-	static void ev_io_callback(struct ev_loop* loop, ev_io* w, int e) {
+	template<typename EV_t>
+	static void tasks_event_callback(struct ev_loop* loop, EV_t w, int e) {
 		worker* worker = (tasks::worker*) ev_userdata(loop);
 		assert(nullptr != worker);
-		worker->handle_io_event(w, e);
+		task* task = (tasks::task*) w->data;
+		task->stop_watcher(worker);
+		event event = {task, e};
+		worker->add_event(event);
 	}
 
-	static void ev_async_callback(struct ev_loop* loop, ev_async* w, int events) {
+	static void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events) {
 		worker* worker = (tasks::worker*) ev_userdata(loop);
 		assert(nullptr != worker);
 		task_func_queue* tfq = (tasks::task_func_queue*) w->data;
@@ -143,12 +149,6 @@ namespace tasks {
 			assert(worker->signal_call(tfq->queue.front()));
 			tfq->queue.pop();
 		}
-	}
-
-	static void ev_timer_callback(struct ev_loop* loop, ev_timer* w, int revents) {
-		worker* worker = (tasks::worker*) ev_userdata(loop);
-		assert(nullptr != worker);
-		worker->handle_timer_event(w);
 	}
 
 } // tasks

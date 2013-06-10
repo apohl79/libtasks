@@ -30,22 +30,26 @@ namespace tasks {
 	public:
 		virtual ~task() {}
 
-		// Each task needs to implement the handle_event method. Returns true on success and false
-		// otherwise. The task will be deleted if false is returned.
+		// Each task needs to implement the handle_event method. Returns true if the task stays active
+		// and false otherwise. The task will be deleted if false is returned and auto_delete()
+		// returns true.
 		virtual bool handle_event(worker* worker, int events) = 0;
 
-		inline bool delete_after_error() const {
-			return m_delete_after_error;
+		virtual void stop_watcher(worker* worker) = 0;
+		virtual void start_watcher(worker* worker) = 0;
+
+		inline bool auto_delete() const {
+			return m_auto_delete;
 		}
 
-		inline void disable_delete_after_error() {
-			m_delete_after_error = false;
+		inline void disable_auto_delete() {
+			m_auto_delete = false;
 		}
 
 	private:
 		// Default behavior is to delete a task when handle_event returns false. Change this by calling
-		// disable_delete_after_error().
-		bool m_delete_after_error = true;
+		// disable_auto_delete().
+		bool m_auto_delete = true;
 		
 	};
 	

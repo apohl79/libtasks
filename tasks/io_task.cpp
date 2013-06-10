@@ -28,7 +28,7 @@ namespace tasks {
 		tdbg(get_string() << ": ctor" << std::endl);
 		std::unique_ptr<ev_io> io(new ev_io);
 		m_io = std::move(io);
-		ev_init(m_io.get(), ev_io_callback);
+		ev_init(m_io.get(), tasks_event_callback<ev_io*>);
 		if (-1 != m_fd) {
 			ev_io_set(m_io.get(), m_fd, m_events);
 		}

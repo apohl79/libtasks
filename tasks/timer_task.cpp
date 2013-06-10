@@ -28,7 +28,7 @@ namespace tasks {
 		tdbg(get_string() << ": ctor" << std::endl);
 		std::unique_ptr<ev_timer> timer(new ev_timer);
 		m_timer = std::move(timer);
-		ev_timer_init(m_timer.get(), ev_timer_callback, after, repeat);
+		ev_timer_init(m_timer.get(), tasks_event_callback<ev_timer*>, after, repeat);
 		m_timer->data = this;
 	}
 
