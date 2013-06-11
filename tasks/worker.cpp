@@ -18,7 +18,6 @@
  */
 
 #include <tasks/worker.h>
-#include <tasks/dispatcher.h>
 #include <chrono>
 
 namespace tasks {
@@ -38,20 +37,10 @@ namespace tasks {
 		task_func_queue* tfq = (task_func_queue*) m_signal_watcher.data;
 		delete tfq;
 	}
-
-	void worker::promote_leader() {
-		std::shared_ptr<worker> w = dispatcher::get_instance()->get_free_worker();
-		if (nullptr != w) {
-			// If we find a free worker, we promote it to the next leader. This thread stays leader
-			// otherwise.
-			m_leader.store(false);
-			w->set_event_loop(std::move(m_loop));
-		}
-	}
 	
 	void worker::run() {
-		// Wait for a short while before entering the loop to allow the dispatcher
-		// to finish its initialization.
+		// Wait for a short while before entering the loop to allow
+		// the dispatcher to finish its initialization.
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		while (!m_term) {
 			// Wait until promoted to the leader thread
@@ -70,13 +59,15 @@ namespace tasks {
 				ev_loop(m_loop->loop, EVLOOP_ONESHOT);
 				// Check if events got fired
 				if (!m_events_queue.empty()) {
-					// Now promote the next leader and call the event handlers
+					// Now promote the next leader and call the event
+					// handlers
 					promote_leader();
 					// Handle events
 					while (!m_events_queue.empty()) {
 						event event = m_events_queue.front();
 						if (event.task->handle_event(this, event.revents)) {
-							// We activate the watcher again as true was returned. 
+							// We activate the watcher again as true
+							// was returned.
 							event.task->start_watcher(this);
 						} else {
 							if (event.task->auto_delete()) {
@@ -94,7 +85,8 @@ namespace tasks {
 			} else {
 				// Shutdown, the leader terminates the loop
 				if (m_leader) {
-					// FIXME: Iterate over all watchers and delete registered tasks.
+					// FIXME: Iterate over all watchers and delete
+					// registered tasks.
 					ev_unloop (m_loop->loop, EVUNLOOP_ALL);
 				}
 			}

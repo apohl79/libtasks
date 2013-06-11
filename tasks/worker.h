@@ -20,6 +20,7 @@
 #ifndef _TASKS_WORKER_H_
 #define _TASKS_WORKER_H_
 
+#include <tasks/dispatcher.h>
 #include <tasks/task.h>
 #include <tasks/logging.h>
 #include <tasks/ev_wrapper.h>
@@ -51,9 +52,10 @@ namespace tasks {
 		std::mutex mutex;
 	};
 
-	// Put all io events into a queue instead of handling them directly from handle_io_event as multiple
-	// events can fire and we want to promote the next leader after the ev_loop call returns to avoid calling
-	// it from multiple threads.
+	// Put all queued events into a queue instead of handling them
+	// directly from handle_io_event as multiple events can fire and
+	// we want to promote the next leader after the ev_loop call
+	// returns to avoid calling it from multiple threads.
 	struct event {
 		tasks::task* task;
 		int revents;
@@ -74,11 +76,12 @@ namespace tasks {
 			return os.str();
 		}
 
-		// Executes task_func directly if called in leader thread context or delegates it. Returns true
-		// when task_func has been executed.
+		// Executes task_func directly if called in leader thread
+		// context or delegates it. Returns true when task_func has
+		// been executed.
 		inline bool signal_call(task_func f) {
 			if (m_leader) {
-				// The worker is the leader
+				// The worker is the leader, now execute the functor
 				f(m_loop->loop);
 				return true;
 			} else {
@@ -90,7 +93,6 @@ namespace tasks {
 			}
 		}
 
-		// Called by promote_leader() to hand over the event loop struct to the next worker.
 		inline void set_event_loop(std::unique_ptr<loop_wrapper> loop) {
 			m_loop = std::move(loop);
 			m_leader.store(true);
@@ -120,10 +122,20 @@ namespace tasks {
 		std::condition_variable m_work_cond;
 		std::queue<event> m_events_queue;
 
-		// Every worker has an async watcher to be able to call into the leader thread context.
+		// Every worker has an async watcher to be able to call
+		// into the leader thread context.
 		ev_async m_signal_watcher;
 
-		void promote_leader();
+		inline void promote_leader() {
+			std::shared_ptr<worker> w = dispatcher::get_instance()->get_free_worker();
+			if (nullptr != w) {
+				// If we find a free worker, we promote it to the next
+				// leader. This thread stays leader otherwise.
+				m_leader.store(false);
+				w->set_event_loop(std::move(m_loop));
+			}
+		}
+
 		void run();
 	};
 	
