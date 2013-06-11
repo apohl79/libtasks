@@ -20,8 +20,6 @@
 #ifndef _TASKS_TASK_H_
 #define _TASKS_TASK_H_
 
-#include <memory>
-
 namespace tasks {
 
 	class worker;
