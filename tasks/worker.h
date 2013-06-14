@@ -41,7 +41,7 @@ namespace tasks {
 	// Needed to use std::unique_ptr<>
 	class loop_wrapper {
 	public:
-		struct ev_loop *loop;
+		struct ev_loop* loop;
 	};
 
 	// Signals to enter the leader thread context
