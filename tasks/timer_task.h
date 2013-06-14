@@ -28,7 +28,7 @@ namespace tasks {
 
 	class worker;
 	
-	class timer_task : public virtual task {
+	class timer_task : public task {
 	public:
 		timer_task(double after, double repeat);
 		virtual ~timer_task();

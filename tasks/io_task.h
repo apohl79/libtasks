@@ -29,7 +29,7 @@ namespace tasks {
 
 	class worker;
 	
-	class io_task : public virtual task {
+	class io_task : public task {
 	public:
 		io_task(int fd, int events);
 		virtual ~io_task();
