@@ -67,7 +67,7 @@ namespace tasks {
 			// temporary handle to the current worker
 			tasks::worker* m_worker = nullptr;
 
-			virtual void finish_request() {
+			inline void finish_request() {
 				m_request.clear();
 				m_response.clear();
 			}
