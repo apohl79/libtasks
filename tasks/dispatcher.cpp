@@ -64,7 +64,7 @@ namespace tasks {
 		io_task* io_task = dynamic_cast<tasks::io_task*>(task);
 		if (nullptr != io_task) {
 			io_task->init_watcher();
-			ev_io_start(ev_default_loop(0), io_task->get_watcher());
+			ev_io_start(ev_default_loop(0), io_task->watcher());
 			success = true;
 		}
 		return success;
@@ -74,7 +74,7 @@ namespace tasks {
 		bool success = false;
 		timer_task* timer_task = dynamic_cast<tasks::timer_task*>(task);
 		if (nullptr != timer_task) {
-			ev_timer_start(ev_default_loop(0), timer_task->get_watcher());
+			ev_timer_start(ev_default_loop(0), timer_task->watcher());
 			success = true;
 		}
 		return success;
@@ -119,7 +119,7 @@ namespace tasks {
 		m_finish_cond.notify_one();
 	}
 
-	std::shared_ptr<worker> dispatcher::get_free_worker() {
+	std::shared_ptr<worker> dispatcher::free_worker() {
 		if (m_num_workers > 1) {
 			std::lock_guard<std::mutex> lock(m_worker_mutex);
 			if (m_worker_queue.empty()) {
@@ -127,7 +127,7 @@ namespace tasks {
 			}
 			int id = m_worker_queue.front();
 			m_worker_queue.pop();
-			tdbg("dispatcher: get_free_worker(" << id << ")" << std::endl);
+			tdbg("dispatcher: free_worker(" << id << ")" << std::endl);
 			return m_workers[id];
 		} else {
 			return nullptr;

@@ -37,15 +37,15 @@ namespace tasks {
 			return "timer_task";
 		}
 		
-		inline ev_timer* get_watcher() const {
+		inline ev_timer* watcher() const {
 			return m_timer.get();
 		}
 
-		inline double get_after() const {
+		inline double after() const {
 			return m_after;
 		} 
 
-		inline double get_repeat() const {
+		inline double repeat() const {
 			return m_repeat;
 		} 
 

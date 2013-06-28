@@ -40,15 +40,15 @@ namespace tasks {
 			return os.str();
 		}
 
-		inline int get_fd() const {
+		inline int fd() const {
 			return m_fd;
 		}
 
-		inline int get_events() const {
+		inline int events() const {
 			return m_events;
 		}
 
-		inline ev_io* get_watcher() const {
+		inline ev_io* watcher() const {
 			return m_io.get();
 		}
 

@@ -87,7 +87,7 @@ namespace tasks {
 					if (active) {
 						ev_io_stop(loop, m_io.get());
 					}
-					ev_io_set(get_watcher(), m_fd, m_events);
+					ev_io_set(m_io.get(), m_fd, m_events);
 					if (active) {
 						ev_io_start(loop, m_io.get());
 					}
@@ -100,7 +100,7 @@ namespace tasks {
 		worker->signal_call([task] (struct ev_loop* loop) {
 				tdbg(task->get_string() << ": adding io_task" << std::endl);
 				task->init_watcher();
-				ev_io_start(loop, task->get_watcher());
+				ev_io_start(loop, task->watcher());
 			});
 	}
 
@@ -110,8 +110,8 @@ namespace tasks {
 		}
 		worker->signal_call([task] (struct ev_loop* loop) {
 				tdbg(task->get_string() << ": disposing io_task" << std::endl);
-				if (ev_is_active(task->get_watcher())) {
-					ev_io_stop(loop, task->get_watcher());
+				if (ev_is_active(task->watcher())) {
+					ev_io_stop(loop, task->watcher());
 				}
 				delete task;
 			});

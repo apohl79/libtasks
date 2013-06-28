@@ -35,16 +35,15 @@ std::atomic<int> stats::m_req_count;
 std::atomic<int> stats::m_clients;
 
 bool echo_handler::handle_event(tasks::worker* worker, int events) {
-	int fd = get_fd();
 	if (events & EV_READ) {
 		std::vector<char> buf(1024);
-		ssize_t bytes = recvfrom(fd, &buf[0], buf.size(), 0, nullptr, nullptr);
+		ssize_t bytes = recvfrom(fd(), &buf[0], buf.size(), 0, nullptr, nullptr);
 		if (bytes < 0 && errno != EAGAIN) {
-			terr("echo_handler: error reading from client file descriptor " << fd << ", errno "
+			terr("echo_handler: error reading from client file descriptor " << fd() << ", errno "
 				<< errno << std::endl);
 			return false;
 		} else if (bytes == 0) {
-			std::cout << "echo_handler: client " << fd << " disconnected" << std::endl;
+			std::cout << "echo_handler: client " << fd() << " disconnected" << std::endl;
 			return false;
 		} else if (bytes > 0) {
 			tdbg("echo_handler: read " << bytes << " bytes" << std::endl);
@@ -55,10 +54,10 @@ bool echo_handler::handle_event(tasks::worker* worker, int events) {
 	if (events & EV_WRITE) {
 		if (!m_write_queue.empty()) {
 			std::vector<char>& buf = m_write_queue.front();
-			ssize_t bytes = sendto(fd, &buf[m_write_offset], buf.size() - m_write_offset,
+			ssize_t bytes = sendto(fd(), &buf[m_write_offset], buf.size() - m_write_offset,
 								   0, nullptr, 0);
 			if (bytes < 0 && errno != EAGAIN) {
-				terr("echo_handler: error writing to client file descriptor " << fd << ", errno "
+				terr("echo_handler: error writing to client file descriptor " << fd() << ", errno "
 					 << errno << std::endl);
 				return false;
 			} else if (bytes > 0) {
@@ -100,7 +99,7 @@ int main(int argc, char** argv) {
 #endif
 	stats s;
 	tasks::net::acceptor<echo_handler> srv(12345);
-	tasks::dispatcher::get_instance()->run(2, &srv, &s);
+	tasks::dispatcher::instance()->run(2, &srv, &s);
 #ifdef PROFILER
 	ProfilerStop();
 #endif

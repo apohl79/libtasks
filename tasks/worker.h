@@ -66,7 +66,7 @@ namespace tasks {
 		worker(int id);
 		virtual ~worker();
 
-		inline int get_id() const {
+		inline int id() const {
 			return m_id;
 		}
 
@@ -127,7 +127,7 @@ namespace tasks {
 		ev_async m_signal_watcher;
 
 		inline void promote_leader() {
-			std::shared_ptr<worker> w = dispatcher::get_instance()->get_free_worker();
+			std::shared_ptr<worker> w = dispatcher::instance()->free_worker();
 			if (nullptr != w) {
 				// If we find a free worker, we promote it to the next
 				// leader. This thread stays leader otherwise.

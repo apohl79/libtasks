@@ -81,7 +81,7 @@ namespace tasks {
 
 			if (!m_term) {
 				// Add this worker as available worker
-				dispatcher::get_instance()->add_free_worker(get_id());
+				dispatcher::instance()->add_free_worker(id());
 			} else {
 				// Shutdown, the leader terminates the loop
 				if (m_leader) {

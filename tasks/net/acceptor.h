@@ -58,13 +58,13 @@ namespace tasks {
 			}
 		
 			~acceptor() {
-				shutdown(get_fd(), SHUT_RDWR);
+				shutdown(fd(), SHUT_RDWR);
 			}
 
 			bool handle_event(worker* worker, int revents)  {
 				struct sockaddr_in addr;
 				socklen_t len = sizeof(addr);
-				int client = accept(get_fd(), (struct sockaddr *) &addr, &len);
+				int client = accept(fd(), (struct sockaddr *) &addr, &len);
 				if (client < 0) {
 					terr("acceptor: accept failed with errno " << errno << std::endl);
 				} else {

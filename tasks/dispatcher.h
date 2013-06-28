@@ -39,7 +39,7 @@ namespace tasks {
 	public:
 		dispatcher();
 
-		static std::shared_ptr<dispatcher> get_instance() {
+		static std::shared_ptr<dispatcher> instance() {
 			if (nullptr == m_instance) {
 				m_instance = std::make_shared<dispatcher>();
 			}
@@ -47,7 +47,7 @@ namespace tasks {
 		}
 		
 		// Get a free worker to promote it to the leader.
-		std::shared_ptr<worker> get_free_worker();
+		std::shared_ptr<worker> free_worker();
 
 		// When a worker finishes his work he returns to the free worker queue.
 		void add_free_worker(int id);

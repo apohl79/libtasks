@@ -28,7 +28,7 @@ namespace tasks {
 			// Remember the worker for this event call, needed for send_response()
 			m_worker = worker;
 			if (EV_READ & revents) {
-				if (m_request.read_data(get_fd())) {
+				if (m_request.read_data(fd())) {
 					if (m_request.done()) {
 						if (UWSGI_VARS == m_request.header().modifier1) {
 							success = handle_request();
@@ -45,7 +45,7 @@ namespace tasks {
 					success = false;
 				}
 			} else if (EV_WRITE & revents) {
-				if (m_response.write_data(get_fd())) {
+				if (m_response.write_data(fd())) {
 					if (m_response.done()) {
 						finish_request();				
 #if UWSGI_KEEPALIVE == 1
