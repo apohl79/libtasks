@@ -4,7 +4,7 @@ CC = $(CXX)
 DEBUG = 0
 PROFILER = 0
 
-CXXFLAGS = -O3 -ggdb -I../.. -I. -std=c++11 -pthread
+CXXFLAGS = -O4 -ggdb -I../.. -I. -std=c++11 -pthread
 LDFLAGS = -L../../tasks -ltasks -lev
 
 ifeq ($(DEBUG), 1)
