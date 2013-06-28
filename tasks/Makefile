@@ -5,7 +5,7 @@ CC = $(CXX)
 CXXFLAGS = -O3 -ggdb -I.. -std=c++11 -pthread
 LDFLAGS = -lev
 
-SRC = $(wildcard *.cpp)
+SRC = $(wildcard *.cpp) $(wildcard net/*.cpp)
 OBJ = $(patsubst %.cpp,%.o,$(SRC))
 
 all: $(TARGET)
