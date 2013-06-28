@@ -52,7 +52,7 @@ namespace tasks {
 			// Write data buffer
 			if (WRITE_DATA == m_state) {
 				ssize_t bytes = sendto(fd, m_data_buffer.pointer(), m_data_buffer.bytes_left(),
-									   MSG_NOSIGNAL, nullptr, 0);
+									   SENDTO_FLAGS, nullptr, 0);
 				if (bytes < 0 && errno != EAGAIN) {
 					terr("uwsgi_response: error writing to client file descriptor " << fd << ", errno "
 						 << errno << std::endl);
@@ -75,7 +75,7 @@ namespace tasks {
 			// Write content buffer
 			if (WRITE_CONTENT == m_state) {
 				ssize_t bytes = sendto(fd, m_content_buffer.pointer(), m_content_buffer.bytes_left(),
-									   MSG_NOSIGNAL, nullptr, 0);
+									   SENDTO_FLAGS, nullptr, 0);
 				if (bytes < 0 && errno != EAGAIN) {
 					terr("uwsgi_response: error writing to client file descriptor " << fd << ", errno "
 						 << errno << std::endl);

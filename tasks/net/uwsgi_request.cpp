@@ -30,7 +30,7 @@ namespace tasks {
 
 		bool uwsgi_request::read_header(int fd) {
 			bool success = false;
-			ssize_t bytes = recvfrom(fd, &m_header, sizeof(m_header), MSG_DONTWAIT, nullptr, nullptr);
+			ssize_t bytes = recvfrom(fd, &m_header, sizeof(m_header), RECVFROM_FLAGS, nullptr, nullptr);
 			if (bytes < 0 && errno != EAGAIN) {
 				terr("uwsgi_request: error reading from client file descriptor " << fd << ", errno "
 					 << errno << std::endl);
@@ -56,7 +56,7 @@ namespace tasks {
 			}
 			if (success && READ_DATA == m_state) {
 				ssize_t bytes = recvfrom(fd, m_data_buffer.pointer(), m_data_buffer.bytes_left(),
-										 MSG_DONTWAIT, nullptr, nullptr);
+										 RECVFROM_FLAGS, nullptr, nullptr);
 				if (bytes < 0) {
 					if (errno != EAGAIN) {
 						terr("uwsgi_request: error reading from client file descriptor " << fd << ", errno "
@@ -89,7 +89,7 @@ namespace tasks {
 			}
 			if (success && READ_CONTENT == m_state) {
 				ssize_t bytes = recvfrom(fd, m_content_buffer.pointer(), m_content_buffer.bytes_left(),
-										 MSG_DONTWAIT, nullptr, nullptr);
+										 RECVFROM_FLAGS, nullptr, nullptr);
 				if (bytes < 0) {
 					if (errno != EAGAIN) {
 						terr("uwsgi_request: error reading from client file descriptor " << fd << ", errno "

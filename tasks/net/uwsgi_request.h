@@ -28,6 +28,12 @@
 #include <tasks/net/uwsgi_structs.h>
 #include <tasks/tools/buffer.h>
 
+#ifdef __linux__
+#define RECVFROM_FLAGS MSG_DONTWAIT
+#else
+#define RECVFROM_FLAGS 0
+#endif
+
 namespace tasks {
 	namespace net {
 		
