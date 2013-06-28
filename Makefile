@@ -1,5 +1,5 @@
 LIB = tasks/libtasks.a
-EXAMPLES = examples/echoserver
+EXAMPLES = examples
 
 all: $(LIB) $(EXAMPLES)
 
@@ -9,8 +9,12 @@ $(LIB):
 	cd tasks && $(MAKE) $(MAKE_ARGS)
 
 $(EXAMPLES):
-	cd examples && $(MAKE) $(MAKE_ARGS)
+	for e in examples/*; do \
+	  cd $$e && $(MAKE) $(MAKE_ARGS) && cd - ; \
+	done 
 
 clean:
-	cd tasks && make clean && cd ..
-	cd examples && make clean && cd ..
+	cd tasks && $(MAKE) clean && cd -
+	for e in examples/*; do \
+	  cd $$e && $(MAKE) clean && cd - ; \
+	done 

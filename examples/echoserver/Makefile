@@ -1,0 +1,32 @@
+TARGET = echoserver
+CXX = g++-4.8
+CC = $(CXX)
+DEBUG = 0
+PROFILER = 0
+
+CXXFLAGS = -O3 -ggdb -I../.. -I. -std=c++11 -pthread
+LDFLAGS = -L../../tasks -ltasks -lev
+
+ifeq ($(DEBUG), 1)
+  CXXFLAGS += -DDEBUG -DLOGMUTEX
+endif
+
+ifeq ($(PROFILER), 1)
+  CXXFLAGS += -DPROFILER
+  LDFLAGS += -lprofiler
+endif
+
+SRC = $(wildcard *.cpp)
+OBJ = $(patsubst %.cpp,%.o,$(SRC))
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
+	$(CXX) $(CXXFLAGS) $(OBJ) $(LDFLAGS) -o $@
+
+$(OBJ): %.o: %.cpp
+
+$(OBJ): %.o: %.h
+
+clean:
+	rm $(OBJ) $(TARGET)
