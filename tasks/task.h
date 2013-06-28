@@ -20,7 +20,12 @@
 #ifndef _TASKS_TASK_H_
 #define _TASKS_TASK_H_
 
+#include <functional>
+#include <vector>
+
 namespace tasks {
+
+	typedef std::function<void()> task_finish_func;
 
 	class worker;
 	
@@ -44,11 +49,25 @@ namespace tasks {
 			m_auto_delete = false;
 		}
 
+		inline void finish() {
+			for (auto f : m_finish_funcs) {
+				f();
+			}
+			delete this;
+		}
+
+		// If a task finishes it can execute callback functions. Note that no locks will be used at this
+		// level.
+		inline void on_finish(task_finish_func f) {
+			m_finish_funcs.push_back(f);
+		}
+
 	private:
 		// Default behavior is to delete a task when handle_event returns false. Change this by calling
 		// disable_auto_delete().
 		bool m_auto_delete = true;
-		
+
+		std::vector<task_finish_func> m_finish_funcs;
 	};
 	
 } // tasks
