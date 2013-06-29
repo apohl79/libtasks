@@ -25,13 +25,19 @@
 
 namespace tasks {
 
-	typedef std::function<void()> task_finish_func;
-
 	class worker;
-	
+
+	typedef std::function<void(worker* worker)> task_finish_func;
+
 	class task {
 	public:
 		virtual ~task() {}
+
+		// Dispose is called to delete a task. Instead of calling delete directly we enable for hooking
+		// in here. This is required by the io_task for example to stop the watcher.
+		virtual void dispose(worker* worker) {
+			delete this;
+		}
 
 		// Each task needs to implement the handle_event method. Returns true if the task stays active
 		// and false otherwise. The task will be deleted if false is returned and auto_delete()
@@ -49,11 +55,11 @@ namespace tasks {
 			m_auto_delete = false;
 		}
 
-		inline void finish() {
+		inline void finish(worker* worker) {
 			for (auto f : m_finish_funcs) {
-				f();
+				f(worker);
 			}
-			delete this;
+			dispose(worker);
 		}
 
 		// If a task finishes it can execute callback functions. Note that no locks will be used at this

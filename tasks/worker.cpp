@@ -71,7 +71,7 @@ namespace tasks {
 							event.task->start_watcher(this);
 						} else {
 							if (event.task->auto_delete()) {
-								event.task->finish();
+								event.task->finish(this);
 							}
 						}
 						m_events_queue.pop();

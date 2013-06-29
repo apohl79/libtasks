@@ -60,13 +60,12 @@ namespace tasks {
 		void stop_watcher(worker* worker);
 		void update_watcher(worker* worker);
 
+		virtual void dispose(worker* worker);
+
 	protected:
 		void set_fd(int fd);
 		void set_events(int events);
 		void add_io_task(worker* worker, io_task* task);
-		// Call this to destroy a task. The watcher will be stopped and
-		// delete will be called.
-		void dispose(worker* worker, io_task* task = nullptr);
 		
 	private:
 		std::unique_ptr<ev_io> m_io;

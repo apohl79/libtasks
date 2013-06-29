@@ -104,16 +104,13 @@ namespace tasks {
 			});
 	}
 
-	void io_task::dispose(worker* worker, io_task* task) {
-		if (nullptr == task) {
-			task = this;
-		}
-		worker->signal_call([task] (struct ev_loop* loop) {
-				tdbg(task->get_string() << ": disposing io_task" << std::endl);
-				if (ev_is_active(task->watcher())) {
-					ev_io_stop(loop, task->watcher());
+	void io_task::dispose(worker* worker) {
+		worker->signal_call([this] (struct ev_loop* loop) {
+				tdbg(get_string() << ": disposing io_task" << std::endl);
+				if (ev_is_active(watcher())) {
+					ev_io_stop(loop, watcher());
 				}
-				delete task;
+				delete this;
 			});
 	}
 
