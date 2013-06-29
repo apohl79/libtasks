@@ -27,52 +27,52 @@
 
 namespace tasks {
 
-	class worker;
+class worker;
 	
-	class io_task : public task {
-	public:
-		io_task(int fd, int events);
-		virtual ~io_task();
+class io_task : public task {
+public:
+	io_task(int fd, int events);
+	virtual ~io_task();
 
-		inline std::string get_string() const {
-			std::ostringstream os;
-			os << "io_task(" << m_fd << ":" << m_events << ")";
-			return os.str();
-		}
+	inline std::string get_string() const {
+		std::ostringstream os;
+		os << "io_task(" << m_fd << ":" << m_events << ")";
+		return os.str();
+	}
 
-		inline int fd() const {
-			return m_fd;
-		}
+	inline int fd() const {
+		return m_fd;
+	}
 
-		inline int events() const {
-			return m_events;
-		}
+	inline int events() const {
+		return m_events;
+	}
 
-		inline ev_io* watcher() const {
-			return m_io.get();
-		}
+	inline ev_io* watcher() const {
+		return m_io.get();
+	}
 
-		inline void init_watcher() {
-			ev_io_set(m_io.get(), m_fd, m_events);
-		}
+	inline void init_watcher() {
+		ev_io_set(m_io.get(), m_fd, m_events);
+	}
 		
-		void start_watcher(worker* worker);
-		void stop_watcher(worker* worker);
-		void update_watcher(worker* worker);
+	void start_watcher(worker* worker);
+	void stop_watcher(worker* worker);
+	void update_watcher(worker* worker);
 
-		virtual void dispose(worker* worker);
+	virtual void dispose(worker* worker);
 
-	protected:
-		void set_fd(int fd);
-		void set_events(int events);
-		void add_io_task(worker* worker, io_task* task);
+protected:
+	void set_fd(int fd);
+	void set_events(int events);
+	void add_io_task(worker* worker, io_task* task);
 		
-	private:
-		std::unique_ptr<ev_io> m_io;
-		int m_fd = -1;
-		int m_events = EV_UNDEF;
-		bool m_change_pending = false;
-	};
+private:
+	std::unique_ptr<ev_io> m_io;
+	int m_fd = -1;
+	int m_events = EV_UNDEF;
+	bool m_change_pending = false;
+};
 	
 } // tasks
 

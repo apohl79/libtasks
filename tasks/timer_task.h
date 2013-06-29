@@ -26,37 +26,37 @@
 
 namespace tasks {
 
-	class worker;
+class worker;
 	
-	class timer_task : public task {
-	public:
-		timer_task(double after, double repeat);
-		virtual ~timer_task();
+class timer_task : public task {
+public:
+	timer_task(double after, double repeat);
+	virtual ~timer_task();
 
-		inline std::string get_string() const {
-			return "timer_task";
-		}
+	inline std::string get_string() const {
+		return "timer_task";
+	}
 		
-		inline ev_timer* watcher() const {
-			return m_timer.get();
-		}
+	inline ev_timer* watcher() const {
+		return m_timer.get();
+	}
 
-		inline double after() const {
-			return m_after;
-		} 
+	inline double after() const {
+		return m_after;
+	} 
 
-		inline double repeat() const {
-			return m_repeat;
-		} 
+	inline double repeat() const {
+		return m_repeat;
+	} 
 
-		void start_watcher(worker* worker);
-		void stop_watcher(worker* worker);
+	void start_watcher(worker* worker);
+	void stop_watcher(worker* worker);
 		
-	private:
-		std::unique_ptr<ev_timer> m_timer;
-		double m_after = 0;
-		double m_repeat = 0.;
-	};
+private:
+	std::unique_ptr<ev_timer> m_timer;
+	double m_after = 0;
+	double m_repeat = 0.;
+};
 	
 } // tasks
 

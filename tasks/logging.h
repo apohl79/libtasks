@@ -28,7 +28,7 @@
 #ifdef LOGMUTEX
 #include <mutex>
 namespace tasks {
-	extern std::mutex g_log_mutex;
+extern std::mutex g_log_mutex;
 }
 #define _LOGMUTEX std::lock_guard<std::mutex> _log_lock(tasks::g_log_mutex)
 #else

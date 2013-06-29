@@ -25,56 +25,56 @@
 
 namespace tasks {
 
-	class worker;
+class worker;
 
-	typedef std::function<void(worker* worker)> task_finish_func;
+typedef std::function<void(worker* worker)> task_finish_func;
 
-	class task {
-	public:
-		virtual ~task() {}
+class task {
+public:
+	virtual ~task() {}
 
-		// Dispose is called to delete a task. Instead of calling delete directly we enable for hooking
-		// in here. This is required by the io_task for example to stop the watcher.
-		virtual void dispose(worker* worker) {
-			delete this;
+	// Dispose is called to delete a task. Instead of calling delete directly we enable for hooking
+	// in here. This is required by the io_task for example to stop the watcher.
+	virtual void dispose(worker* worker) {
+		delete this;
+	}
+
+	// Each task needs to implement the handle_event method. Returns true if the task stays active
+	// and false otherwise. The task will be deleted if false is returned and auto_delete()
+	// returns true.
+	virtual bool handle_event(worker* worker, int events) = 0;
+
+	virtual void stop_watcher(worker* worker) = 0;
+	virtual void start_watcher(worker* worker) = 0;
+
+	inline bool auto_delete() const {
+		return m_auto_delete;
+	}
+
+	inline void disable_auto_delete() {
+		m_auto_delete = false;
+	}
+
+	inline void finish(worker* worker) {
+		for (auto f : m_finish_funcs) {
+			f(worker);
 		}
+		dispose(worker);
+	}
 
-		// Each task needs to implement the handle_event method. Returns true if the task stays active
-		// and false otherwise. The task will be deleted if false is returned and auto_delete()
-		// returns true.
-		virtual bool handle_event(worker* worker, int events) = 0;
+	// If a task finishes it can execute callback functions. Note that no locks will be used at this
+	// level.
+	inline void on_finish(task_finish_func f) {
+		m_finish_funcs.push_back(f);
+	}
 
-		virtual void stop_watcher(worker* worker) = 0;
-		virtual void start_watcher(worker* worker) = 0;
+private:
+	// Default behavior is to delete a task when handle_event returns false. Change this by calling
+	// disable_auto_delete().
+	bool m_auto_delete = true;
 
-		inline bool auto_delete() const {
-			return m_auto_delete;
-		}
-
-		inline void disable_auto_delete() {
-			m_auto_delete = false;
-		}
-
-		inline void finish(worker* worker) {
-			for (auto f : m_finish_funcs) {
-				f(worker);
-			}
-			dispose(worker);
-		}
-
-		// If a task finishes it can execute callback functions. Note that no locks will be used at this
-		// level.
-		inline void on_finish(task_finish_func f) {
-			m_finish_funcs.push_back(f);
-		}
-
-	private:
-		// Default behavior is to delete a task when handle_event returns false. Change this by calling
-		// disable_auto_delete().
-		bool m_auto_delete = true;
-
-		std::vector<task_finish_func> m_finish_funcs;
-	};
+	std::vector<task_finish_func> m_finish_funcs;
+};
 	
 } // tasks
 

@@ -21,6 +21,6 @@
 
 #ifdef LOGMUTEX
 namespace tasks {
-	std::mutex g_log_mutex;
+std::mutex g_log_mutex;
 }
 #endif

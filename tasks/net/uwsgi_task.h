@@ -35,45 +35,45 @@
 #define UWSGI_KEEPALIVE 0
 
 namespace tasks {
-	namespace net {
+namespace net {
 
-		class uwsgi_task : public tasks::io_task {
-		public:
-			uwsgi_task(int socket) : tasks::io_task(socket, EV_READ) {}
-			virtual ~uwsgi_task() {}
+class uwsgi_task : public tasks::io_task {
+public:
+	uwsgi_task(int socket) : tasks::io_task(socket, EV_READ) {}
+	virtual ~uwsgi_task() {}
 
-			bool handle_event(tasks::worker* worker, int revents);
+	bool handle_event(tasks::worker* worker, int revents);
 
-			// A request handler needs to implement this
-			virtual bool handle_request() = 0;
+	// A request handler needs to implement this
+	virtual bool handle_request() = 0;
 
-			inline uwsgi_request& request() {
-				return m_request;
-			}
+	inline uwsgi_request& request() {
+		return m_request;
+	}
 
-			inline uwsgi_response& response() {
-				return m_response;
-			}
+	inline uwsgi_response& response() {
+		return m_response;
+	}
 
-			inline void send_response() {
-				assert(nullptr != m_worker);
-				set_events(EV_WRITE);
-				update_watcher(m_worker);
-			}
+	inline void send_response() {
+		assert(nullptr != m_worker);
+		set_events(EV_WRITE);
+		update_watcher(m_worker);
+	}
 
-		private:
-			uwsgi_request m_request;
-			uwsgi_response m_response;
-			// temporary handle to the current worker
-			tasks::worker* m_worker = nullptr;
+private:
+	uwsgi_request m_request;
+	uwsgi_response m_response;
+	// temporary handle to the current worker
+	tasks::worker* m_worker = nullptr;
 
-			inline void finish_request() {
-				m_request.clear();
-				m_response.clear();
-			}
-		};
+	inline void finish_request() {
+		m_request.clear();
+		m_response.clear();
+	}
+};
 
-	} // net
+} // net
 } // tasks
 
 #endif // _UWSGI_TASK_H_

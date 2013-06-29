@@ -21,29 +21,29 @@
 #define _UWSGI_STRUCTS_H_
 
 namespace tasks {
-	namespace net {
+namespace net {
 
-		enum uwsgi_state : uint8_t {
-			READY,
-				DONE,
-				READ_HEADER,
-				READ_DATA,
-				READ_CONTENT,
-				WRITE_DATA,
-				WRITE_CONTENT
-				};
+enum uwsgi_state : uint8_t {
+	READY,
+	DONE,
+	READ_HEADER,
+	READ_DATA,
+	READ_CONTENT,
+	WRITE_DATA,
+	WRITE_CONTENT
+};
 
-		enum uwsgi_packet_type : uint8_t {
-			UWSGI_VARS = 0
-				};
+enum uwsgi_packet_type : uint8_t {
+	UWSGI_VARS = 0
+};
 
-		struct __attribute__((__packed__)) uwsgi_packet_header {
-			uint8_t modifier1;
-			uint16_t datasize;
-			uint8_t modifier2;
-		};
+struct __attribute__((__packed__)) uwsgi_packet_header {
+	uint8_t modifier1;
+	uint16_t datasize;
+	uint8_t modifier2;
+};
 
-	} // net
+} // net
 } // tasks
 
 #endif // _UWSGI_STRUCTS_H_

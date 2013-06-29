@@ -38,53 +38,53 @@
 #endif
 
 namespace tasks {
-	namespace net {
+namespace net {
 
-		class uwsgi_response {
-		public:
-			uwsgi_response() {}
+class uwsgi_response {
+public:
+	uwsgi_response() {}
 
-			inline void set_status(std::string status) {
-				m_status = status;
-			}
+	inline void set_status(std::string status) {
+		m_status = status;
+	}
 	
-			inline void set_header(std::string header, std::string value) {
-				m_headers[header] = value;
-			}
+	inline void set_header(std::string header, std::string value) {
+		m_headers[header] = value;
+	}
 
-			bool write_data(int fd);
+	bool write_data(int fd);
 
-			inline void print() const {
-				std::cout << std::string(m_data_buffer.pointer(0), m_data_buffer.size());
-				if (m_content_buffer.size()) {
-					std::cout << std::string(m_content_buffer.pointer(0), m_content_buffer.size());
-				}
-			}
+	inline void print() const {
+		std::cout << std::string(m_data_buffer.pointer(0), m_data_buffer.size());
+		if (m_content_buffer.size()) {
+			std::cout << std::string(m_content_buffer.pointer(0), m_content_buffer.size());
+		}
+	}
 
-			inline bool done() const {
-				return m_state == DONE;
-			}
+	inline bool done() const {
+		return m_state == DONE;
+	}
 	
-			inline void clear() {
-				m_data_buffer.clear();
-				m_content_buffer.clear();
-				m_status = "";
-				if (m_headers.size() > 0) {
-					m_headers.clear();
-				}
-				m_state = READY;
-			}
+	inline void clear() {
+		m_data_buffer.clear();
+		m_content_buffer.clear();
+		m_status = "";
+		if (m_headers.size() > 0) {
+			m_headers.clear();
+		}
+		m_state = READY;
+	}
 
-		private:
-			tasks::tools::buffer m_data_buffer;
-			tasks::tools::buffer m_content_buffer;
-			uwsgi_state m_state = READY;
+private:
+	tasks::tools::buffer m_data_buffer;
+	tasks::tools::buffer m_content_buffer;
+	uwsgi_state m_state = READY;
 
-			std::string m_status;
-			std::unordered_map<std::string, std::string> m_headers;
-		};
+	std::string m_status;
+	std::unordered_map<std::string, std::string> m_headers;
+};
 
-	} // net
+} // net
 } // tasks
 
 

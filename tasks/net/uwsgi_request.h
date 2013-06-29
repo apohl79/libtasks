@@ -36,70 +36,70 @@
 #endif
 
 namespace tasks {
-	namespace net {
+namespace net {
 		
-		class uwsgi_request {
-		public:
-			static std::string NO_VAL;
+class uwsgi_request {
+public:
+	static std::string NO_VAL;
 	
-			uwsgi_request() {
-				m_header = {0};
-			}
+	uwsgi_request() {
+		m_header = {0};
+	}
 
-			inline const std::string& var(std::string key) const {
-				auto it = m_vars.find(key);
-				if (m_vars.end() != it) {
-					return it->second;
-				}
-				return NO_VAL;
-			}
+	inline const std::string& var(std::string key) const {
+		auto it = m_vars.find(key);
+		if (m_vars.end() != it) {
+			return it->second;
+		}
+		return NO_VAL;
+	}
 
-			inline void print_header() const {
-				std::cout << "header:"
-						  << " modifier1=" << (int) m_header.modifier1
-						  << " datasize=" << m_header.datasize
-						  << " modifier2=" << (int) m_header.modifier2
-						  << std::endl;
-			}
+	inline void print_header() const {
+		std::cout << "header:"
+				  << " modifier1=" << (int) m_header.modifier1
+				  << " datasize=" << m_header.datasize
+				  << " modifier2=" << (int) m_header.modifier2
+				  << std::endl;
+	}
 
-			inline void print_vars() const {
-				for (auto kv : m_vars) {
-					std::cout << kv.first << " = " << kv.second << std::endl;
-				}
-			}
+	inline void print_vars() const {
+		for (auto kv : m_vars) {
+			std::cout << kv.first << " = " << kv.second << std::endl;
+		}
+	}
 
-			bool read_data(int fd);
+	bool read_data(int fd);
 
-			inline bool done() const {
-				return m_state == DONE;
-			}
+	inline bool done() const {
+		return m_state == DONE;
+	}
 
-			inline uwsgi_packet_header& header() {
-				return m_header;
-			}
+	inline uwsgi_packet_header& header() {
+		return m_header;
+	}
 
-			inline void clear() {
-				m_state = READY;
-				m_header = {0};
-				m_data_buffer.clear();
-				m_content_buffer.clear();
-				if (m_vars.size()) {
-					m_vars.clear();
-				}
-			}
+	inline void clear() {
+		m_state = READY;
+		m_header = {0};
+		m_data_buffer.clear();
+		m_content_buffer.clear();
+		if (m_vars.size()) {
+			m_vars.clear();
+		}
+	}
 
-		private:
-			uwsgi_packet_header m_header;
-			tasks::tools::buffer m_data_buffer;
-			tasks::tools::buffer m_content_buffer;
-			uwsgi_state m_state = READY;
-			std::unordered_map<std::string, std::string> m_vars;
+private:
+	uwsgi_packet_header m_header;
+	tasks::tools::buffer m_data_buffer;
+	tasks::tools::buffer m_content_buffer;
+	uwsgi_state m_state = READY;
+	std::unordered_map<std::string, std::string> m_vars;
 
-			bool read_header(int fd);
-			bool read_vars();
-		};
+	bool read_header(int fd);
+	bool read_vars();
+};
 
-	} // net
+} // net
 } // tasks
 
 #endif // _UWSGI_REQUEST_H_

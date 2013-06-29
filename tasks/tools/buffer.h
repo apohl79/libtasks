@@ -25,82 +25,82 @@
 #include <cassert>
 
 namespace tasks {
-	namespace tools {
+namespace tools {
 
-		class buffer {
-		public:
-			inline char* pointer() {
-				return &m_buffer[m_offset];
-			}
+class buffer {
+public:
+	inline char* pointer() {
+		return &m_buffer[m_offset];
+	}
 
-			inline const char* pointer() const {
-				return &m_buffer[m_offset];
-			}
+	inline const char* pointer() const {
+		return &m_buffer[m_offset];
+	}
 
-			inline char* pointer(std::size_t pos) {
-				assert(pos <= m_size);
-				return &m_buffer[pos];
-			}
+	inline char* pointer(std::size_t pos) {
+		assert(pos <= m_size);
+		return &m_buffer[pos];
+	}
 
-			inline const char* pointer(std::size_t pos) const {
-				assert(pos <= m_size);
-				return &m_buffer[pos];
-			}
+	inline const char* pointer(std::size_t pos) const {
+		assert(pos <= m_size);
+		return &m_buffer[pos];
+	}
 
-			inline void move_pointer(std::size_t s) {
-				m_offset += s;
-				assert(m_offset <= m_size);
-			}
+	inline void move_pointer(std::size_t s) {
+		m_offset += s;
+		assert(m_offset <= m_size);
+	}
 
-			inline void move_pointer_abs(std::size_t pos) {
-				m_offset = pos;
-				assert(m_offset <= m_size);
-			}
+	inline void move_pointer_abs(std::size_t pos) {
+		m_offset = pos;
+		assert(m_offset <= m_size);
+	}
 
-			inline std::size_t bytes_left() const {
-				return m_size - m_offset;
-			}
+	inline std::size_t bytes_left() const {
+		return m_size - m_offset;
+	}
 
-			inline std::size_t size() const {
-				return m_size;
-			}
+	inline std::size_t size() const {
+		return m_size;
+	}
 
-			inline void set_size(std::size_t s) {
-				if (m_buffer.size() < s) {
-					m_buffer.resize(s);
-				}
-				m_size = s;
-			}
+	inline void set_size(std::size_t s) {
+		if (m_buffer.size() < s) {
+			m_buffer.resize(s);
+		}
+		m_size = s;
+	}
 	
-			inline std::size_t buffer_size() {
-				return m_buffer.size();
-			}
+	inline std::size_t buffer_size() {
+		return m_buffer.size();
+	}
 
-			inline void resize(std::size_t s) {
-				m_buffer.resize(s);
-			}
+	inline void resize(std::size_t s) {
+		m_buffer.resize(s);
+	}
 	
-			inline void append(const void* data, std::size_t size) {
-				if (m_buffer.size() < m_size + size) {
-					m_buffer.resize(m_size + size + 1024);
-				}
-				std::memcpy(&m_buffer[m_size], data, size);
-				m_size += size;
-			}
+	inline void append(const void* data, std::size_t size) {
+		if (m_buffer.size() < m_size + size) {
+			m_buffer.resize(m_size + size + 1024);
+		}
+		std::memcpy(&m_buffer[m_size], data, size);
+		m_size += size;
+	}
 		
-			inline void clear() {
-				m_size = 0;
-				m_offset = 0;
-			}
+	inline void clear() {
+		m_size = 0;
+		m_offset = 0;
+	}
 	
-		private:
-			std::vector<char> m_buffer;
-			std::size_t m_size = 0;
-			std::size_t m_offset = 0;
+private:
+	std::vector<char> m_buffer;
+	std::size_t m_size = 0;
+	std::size_t m_offset = 0;
 
-		};
+};
 
-	} // tools
+} // tools
 } // tasks
 
 #endif // _BUFFER_H_
