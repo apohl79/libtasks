@@ -23,6 +23,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <iostream>
 
 #include <tasks/net/uwsgi_structs.h>
 #include <tasks/tools/buffer.h>

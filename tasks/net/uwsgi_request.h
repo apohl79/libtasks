@@ -24,6 +24,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include <tasks/net/uwsgi_structs.h>
 #include <tasks/tools/buffer.h>
