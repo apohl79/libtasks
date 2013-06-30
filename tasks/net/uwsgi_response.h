@@ -52,6 +52,14 @@ public:
 		m_headers[header] = value;
 	}
 
+	inline void append(std::string s) {
+		m_content_buffer.append(s.c_str(), s.length());
+	}
+
+	inline void append(const void* data, std::size_t size) {
+		m_content_buffer.append(data, size);
+	}
+
 	bool write_data(int fd);
 
 	inline void print() const {

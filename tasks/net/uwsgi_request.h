@@ -68,6 +68,10 @@ public:
 		}
 	}
 
+	inline void append(const void* data, std::size_t size) {
+		m_content_buffer.append(data, size);
+	}
+
 	bool read_data(int fd);
 
 	inline bool done() const {

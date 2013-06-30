@@ -51,8 +51,16 @@ public:
 		return m_request;
 	}
 
+	inline uwsgi_request* request_p() {
+		return &m_request;
+	}
+
 	inline uwsgi_response& response() {
 		return m_response;
+	}
+
+	inline uwsgi_response* response_p() {
+		return &m_response;
 	}
 
 	inline void send_response() {
