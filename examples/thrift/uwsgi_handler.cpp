@@ -19,8 +19,12 @@
 
 #include <tasks/dispatcher.h>
 #include <tasks/net/acceptor.h>
+#include <tasks/net/uwsgi_response.h>
+#include <tasks/net/uwsgi_thrift_transport.h>
+#include <tasks/tools/thrift_server_writer.h>
 
 #include <iostream>
+#include <protocol/TBinaryProtocol.h>
 
 #ifdef PROFILER
 #include <google/profiler.h>
@@ -35,14 +39,22 @@ bool uwsgi_handler::handle_request() {
 	// Or print all incoming variables
 	//request().print_vars();
 
-	test_msg m;
-	m.msgid = 5;
-	m.msg = "test";
-	// Write thrift data to the content buffer
-	m_thrift_client->send_output(m);
+	typedef tasks::net::uwsgi_thrift_transport<tasks::net::uwsgi_response> transport_type;
+	typedef apache::thrift::protocol::TBinaryProtocol protocol_type;
+
+	boost::shared_ptr<transport_type> transport(new transport_type(response_p()));
+	boost::shared_ptr<protocol_type> protocol(new protocol_type(transport));
+	tasks::tools::thrift_server_writer<id_name, transport_type, protocol_type>
+		writer("lookup", transport, protocol);
+
+	id_name m;
+	m.id = 33;
+	m.name = "testtest";
+	writer.write(m);
 
 	// Now send back a response
 	response().set_status("200 OK");
+	response().set_header("Content-Type", "application/x-thrift");
 	send_response();
 
 	stats::inc_req();

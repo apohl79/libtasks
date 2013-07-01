@@ -24,28 +24,14 @@
 #include <memory>
 
 #include <tasks/net/uwsgi_task.h>
-#include <tasks/net/uwsgi_response.h>
-#include <tasks/net/uwsgi_thrift_transport.h>
-
-#include <transport/TVirtualTransport.h>
-#include <protocol/TBinaryProtocol.h>
 
 #include "stats.h"
 #include "test_service.h"
-
-class test_msg;
 
 class uwsgi_handler : public tasks::net::uwsgi_task {
 public:
 	uwsgi_handler(int s) : uwsgi_task(s) {
 		stats::inc_clients();
-		// create thrift client
-		using namespace tasks::net;
-		using namespace apache::thrift::protocol;
-		boost::shared_ptr<uwsgi_thrift_transport<uwsgi_response> >
-			transport(new uwsgi_thrift_transport<uwsgi_response>(response_p()));
-		boost::shared_ptr<TBinaryProtocol> protocol(new TBinaryProtocol(transport));
-		m_thrift_client = std::unique_ptr<test_serviceClient>(new test_serviceClient(protocol));
 	}
 
 	~uwsgi_handler() {
@@ -53,9 +39,6 @@ public:
 	}
 
 	bool handle_request();
-
-private:
-	std::unique_ptr<test_serviceClient> m_thrift_client;
 };
 
 #endif // _UWSGI_HANDLER_H_

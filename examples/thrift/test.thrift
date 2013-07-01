@@ -1,8 +1,8 @@
-struct test_msg {
-       1: i32 msgid,
-       2: string msg
+struct id_name {
+       1: i32 id,
+       2: string name
 }
 
 service test_service {
-	void output(1: test_msg m)
+	id_name lookup()
 }
