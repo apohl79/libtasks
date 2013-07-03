@@ -1,7 +1,7 @@
 TARGET = libtasks.a
 CXX = g++-4.8
 CC = $(CXX)
-#CXXFLAGS = -O3 -ggdb -I. -std=c++11 -pthread -DDEBUG -DLOGMUTEX
+#CXXFLAGS = -O4 -ggdb -I.. -std=c++11 -pthread -DDEBUG -DLOGMUTEX
 CXXFLAGS = -O4 -ggdb -I.. -std=c++11 -pthread
 LDFLAGS = -lev
 
