@@ -27,6 +27,7 @@
 
 #include <tasks/net/uwsgi_structs.h>
 #include <tasks/tools/buffer.h>
+#include <tasks/logging.h>
 
 #define CRLF "\r\n"
 #define CRLF_SIZE 2
@@ -58,6 +59,11 @@ public:
 
 	inline void append(const void* data, std::size_t size) {
 		m_content_buffer.append(data, size);
+	}
+
+	inline std::size_t copy(void *dst, std::size_t size) {
+		terr("uwsgi_response::copy not supported" << std::endl);
+		return -1;
 	}
 
 	bool write_data(int fd);

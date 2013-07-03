@@ -72,6 +72,15 @@ public:
 		m_content_buffer.append(data, size);
 	}
 
+	inline std::size_t copy(void* data, std::size_t size) {
+		if (m_content_buffer.bytes_left() < size) {
+			size = m_content_buffer.bytes_left();
+		}
+		std::memcpy(data, m_content_buffer.pointer(), size);
+		m_content_buffer.move_pointer(size);
+		return size;
+	}
+
 	bool read_data(int fd);
 
 	inline bool done() const {
