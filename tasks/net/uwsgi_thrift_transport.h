@@ -33,7 +33,7 @@ public:
 	~uwsgi_thrift_transport() {}
 
 	uint32_t read(uint8_t* data, int32_t size) {
-		m_uwsgi_obj->append(data, size);
+		return m_uwsgi_obj->copy(data, size);
 	}
 
 	void write(const uint8_t* data, uint32_t size) {
