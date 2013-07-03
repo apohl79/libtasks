@@ -105,6 +105,8 @@ bool uwsgi_request::read_data(int fd) {
 		}
 		if (success && !m_content_buffer.bytes_left()) {
 			m_state = DONE;
+			// Move the pointer the start to enable reading from the buffer. 
+			m_content_buffer.move_pointer_abs(0);
 		}
 	}
 	return success;
