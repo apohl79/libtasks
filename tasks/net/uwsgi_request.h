@@ -27,6 +27,7 @@
 #include <iostream>
 
 #include <tasks/net/uwsgi_structs.h>
+#include <tasks/net/io_state.h>
 #include <tasks/tools/buffer.h>
 
 #ifdef __linux__
@@ -105,7 +106,7 @@ private:
 	uwsgi_packet_header m_header;
 	tasks::tools::buffer m_data_buffer;
 	tasks::tools::buffer m_content_buffer;
-	uwsgi_state m_state = READY;
+	io_state m_state = READY;
 	std::unordered_map<std::string, std::string> m_vars;
 
 	bool read_header(int fd);

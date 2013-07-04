@@ -27,7 +27,7 @@
 
 #include <tasks/io_task.h>
 #include <tasks/net/uwsgi_request.h>
-#include <tasks/net/uwsgi_response.h>
+#include <tasks/net/http_response.h>
 
 // The nginx uwsgi module does not support keepalive connections. If
 // this gets implemented one day or we find a different webserver that
@@ -39,46 +39,46 @@ namespace net {
 
 class uwsgi_task : public tasks::io_task {
 public:
-	uwsgi_task(int socket) : tasks::io_task(socket, EV_READ) {}
-	virtual ~uwsgi_task() {}
+    uwsgi_task(int socket) : tasks::io_task(socket, EV_READ) {}
+    virtual ~uwsgi_task() {}
 
-	bool handle_event(tasks::worker* worker, int revents);
+    bool handle_event(tasks::worker* worker, int revents);
 
-	// A request handler needs to implement this
-	virtual bool handle_request() = 0;
+    // A request handler needs to implement this
+    virtual bool handle_request() = 0;
 
-	inline uwsgi_request& request() {
-		return m_request;
-	}
+    inline uwsgi_request& request() {
+        return m_request;
+    }
 
-	inline uwsgi_request* request_p() {
-		return &m_request;
-	}
+    inline uwsgi_request* request_p() {
+        return &m_request;
+    }
 
-	inline uwsgi_response& response() {
-		return m_response;
-	}
+    inline http_response& response() {
+        return m_response;
+    }
 
-	inline uwsgi_response* response_p() {
-		return &m_response;
-	}
+    inline http_response* response_p() {
+        return &m_response;
+    }
 
-	inline void send_response() {
-		assert(nullptr != m_worker);
-		set_events(EV_WRITE);
-		update_watcher(m_worker);
-	}
+    inline void send_response() {
+        assert(nullptr != m_worker);
+        set_events(EV_WRITE);
+        update_watcher(m_worker);
+    }
 
 private:
-	uwsgi_request m_request;
-	uwsgi_response m_response;
-	// temporary handle to the current worker
-	tasks::worker* m_worker = nullptr;
+    uwsgi_request m_request;
+    http_response m_response;
+    // temporary handle to the current worker
+    tasks::worker* m_worker = nullptr;
 
-	inline void finish_request() {
-		m_request.clear();
-		m_response.clear();
-	}
+    inline void finish_request() {
+        m_request.clear();
+        m_response.clear();
+    }
 };
 
 } // net
