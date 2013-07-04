@@ -38,16 +38,6 @@
 #define SENDTO_FLAGS 0
 #endif
 
-enum http_state : uint8_t {
-	READY,
-	DONE,
-	READ_HEADER,
-	READ_DATA,
-	READ_CONTENT,
-	WRITE_DATA,
-	WRITE_CONTENT
-};
-
 namespace tasks {
 namespace net {
 
