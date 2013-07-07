@@ -47,6 +47,10 @@ public:
 		return &m_buffer[pos];
 	}
 
+    inline std::size_t offset() const {
+        return m_offset;
+    }
+
 	inline void move_pointer(std::size_t s) {
 		m_offset += s;
 		assert(m_offset <= m_size);
