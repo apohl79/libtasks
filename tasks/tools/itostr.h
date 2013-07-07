@@ -49,9 +49,6 @@ struct itostr_helper {
 		}
 	}
 };
-unsigned itostr_helper::out[10000];
- 
-itostr_helper hlp_init;
  
 template <typename T>
 std::string itostr(T o) {
