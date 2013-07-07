@@ -10,7 +10,7 @@ $(LIB):
 
 $(EXAMPLES):
 	for e in examples/*; do \
-	  cd $$e && $(MAKE) $(MAKE_ARGS) && cd - ; \
+	  cd $$e && $(MAKE) $(MAKE_ARGS) -j1 && cd - ; \
 	done 
 
 clean:
