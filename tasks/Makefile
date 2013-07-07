@@ -1,11 +1,16 @@
 TARGET = libtasks.a
 CXX = g++-4.8
 CC = $(CXX)
-#CXXFLAGS = -O4 -ggdb -I.. -std=c++11 -pthread -DDEBUG -DLOGMUTEX
+DEBUG = 0
+
 CXXFLAGS = -O4 -ggdb -I.. -std=c++11 -pthread
 LDFLAGS = -lev
 
-SRC = $(wildcard *.cpp) $(wildcard net/*.cpp)
+ifeq ($(DEBUG), 1)
+  CXXFLAGS += -DDEBUG -DLOGMUTEX
+endif
+
+SRC = $(wildcard *.cpp) $(wildcard net/*.cpp tools/*.cpp)
 OBJ = $(patsubst %.cpp,%.o,$(SRC))
 
 all: $(TARGET)
