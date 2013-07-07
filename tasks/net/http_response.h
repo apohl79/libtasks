@@ -39,10 +39,15 @@ public:
 
     inline void set_status(std::string status) {
         m_status = status;
+        m_status_code = std::atoi(status.c_str());
     }
 
     inline const std::string& status() const {
         return m_status;
+    }
+
+    inline int status_code() const {
+        return m_status_code;
     }
 
     inline const char* content_p() const {
