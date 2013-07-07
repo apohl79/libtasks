@@ -54,8 +54,8 @@ public:
 
     // Returns the first worker from the workers vector. This can be useful
     // to add tasks in situations where a worker handle is not available.
-    inline std::shared_ptr<worker> first_worker() {
-        return m_workers[0];
+    inline worker* first_worker() {
+        return m_workers[0].get();
     }
         
     // This method starts the system and blocks until finish() gets called.
