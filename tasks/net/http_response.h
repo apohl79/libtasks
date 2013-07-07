@@ -20,82 +20,65 @@
 #ifndef _HTTP_RESPONSE_H_
 #define _HTTP_RESPONSE_H_
 
-#include <vector>
-#include <unordered_map>
-#include <string>
-#include <iostream>
-
-#include <tasks/net/io_state.h>
-#include <tasks/tools/buffer.h>
-#include <tasks/logging.h>
-
-#define CRLF "\r\n"
-#define CRLF_SIZE 2
+#define READ_BUFFER_SIZE_BLOCK 4096
 
 #ifdef __linux__
-#define SENDTO_FLAGS MSG_NOSIGNAL
+#define RECVFROM_FLAGS MSG_DONTWAIT
 #else
-#define SENDTO_FLAGS 0
+#define RECVFROM_FLAGS 0
 #endif
+
+#include <tasks/net/http_base.h>
 
 namespace tasks {
 namespace net {
 
-class http_response {
+class http_response : public http_base {
 public:
     http_response() {}
 
     inline void set_status(std::string status) {
         m_status = status;
     }
-    
-    inline void set_header(std::string header, std::string value) {
-        m_headers[header] = value;
+
+    inline const std::string& status() const {
+        return m_status;
     }
 
-    inline void append(std::string s) {
-        m_content_buffer.append(s.c_str(), s.length());
-    }
-
-    inline void append(const void* data, std::size_t size) {
-        m_content_buffer.append(data, size);
-    }
-
-    inline std::size_t copy(void *dst, std::size_t size) {
-        terr("http_response::copy not supported" << std::endl);
-        return -1;
-    }
-
-    bool write_data(int fd);
-
-    inline void print() const {
-        std::cout << std::string(m_data_buffer.pointer(0), m_data_buffer.size());
-        if (m_content_buffer.size()) {
-            std::cout << std::string(m_content_buffer.pointer(0), m_content_buffer.size());
+    inline const char* content_p() const {
+        if (m_content_length) {
+            return m_content_buffer.pointer();
         }
+        return nullptr;
     }
 
-    inline bool done() const {
-        return m_state == DONE;
-    }
+    void prepare_data_buffer();
     
-    inline void clear() {
-        m_data_buffer.clear();
-        m_content_buffer.clear();
+    bool read_data(int fd);
+    
+    void clear() {
+        http_base::clear();
         m_status = "";
-        if (m_headers.size() > 0) {
-            m_headers.clear();
-        }
-        m_state = READY;
+        m_line_number = 0;
+        m_last_line_start = 0;
+        m_content_start = 0;
+        m_content_length_exists = false;
+        m_chunked_enc = false;
     }
 
 private:
-    tasks::tools::buffer m_data_buffer;
-    tasks::tools::buffer m_content_buffer;
-    io_state m_state = READY;
-
     std::string m_status;
-    std::unordered_map<std::string, std::string> m_headers;
+    int m_status_code;
+    int m_line_number = 0;
+    std::size_t m_last_line_start = 0;
+    std::size_t m_content_start = 0;
+    bool m_content_length_exists = false;
+    bool m_chunked_enc = false;
+
+    bool parse_data();
+    bool parse_line();
+    bool parse_status();
+    bool parse_header();    
 };
 
 } // net

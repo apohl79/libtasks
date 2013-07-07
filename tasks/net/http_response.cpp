@@ -18,6 +18,8 @@
  */
 
 #include <iostream>
+#include <cstring>
+#include <cstdlib>
 #include <sys/socket.h>
 #include <tasks/logging.h>
 
@@ -27,69 +29,158 @@
 namespace tasks {
 namespace net {
 
-bool http_response::write_data(int fd) {
-    bool success = true;
-    // Fill the data buffer in ready state
-    if (READY == m_state) {
-        // Status line
-        m_data_buffer.append("HTTP/1.1 ", 9);
-        m_data_buffer.append(m_status.c_str(), m_status.length());
+void http_response::prepare_data_buffer() {
+    // Status line
+    m_data_buffer.append("HTTP/1.1 ", 9);
+    m_data_buffer.append(m_status.c_str(), m_status.length());
+    m_data_buffer.append(CRLF, CRLF_SIZE);
+    // Headers
+    for (auto kv : m_headers) {
+        m_data_buffer.append(kv.first.c_str(), kv.first.length());
+        m_data_buffer.append(": ", 2);
+        m_data_buffer.append(kv.second.c_str(), kv.second.length());
         m_data_buffer.append(CRLF, CRLF_SIZE);
-        // Headers
-        for (auto kv : m_headers) {
-            m_data_buffer.append(kv.first.c_str(), kv.first.length());
-            m_data_buffer.append(": ", 2);
-            m_data_buffer.append(kv.second.c_str(), kv.second.length());
-            m_data_buffer.append(CRLF, CRLF_SIZE);
-        }
-        std::string ct = "Content-Length: "
-            + tasks::tools::itostr<std::size_t>(m_content_buffer.size());
-        m_data_buffer.append(ct.c_str(), ct.length());
-        m_data_buffer.append(CRLF, CRLF_SIZE);
-        m_data_buffer.append(CRLF, CRLF_SIZE);
-        m_state = WRITE_DATA;
     }
-    // Write data buffer
-    if (WRITE_DATA == m_state) {
-        ssize_t bytes = sendto(fd, m_data_buffer.pointer(), m_data_buffer.bytes_left(),
-                               SENDTO_FLAGS, nullptr, 0);
-        if (bytes < 0 && errno != EAGAIN) {
-            terr("http_response: error writing to client file descriptor " << fd << ", errno "
-                 << errno << std::endl);
-            success = false;
-        } else if (bytes > 0) {
-            tdbg("http_response: wrote data successfully, " << bytes << "/" << m_data_buffer.size()
-                 << " bytes" << std::endl);
-            m_data_buffer.move_pointer(bytes);
-            if (!m_data_buffer.bytes_left()) {
-                if (m_content_buffer.size()) {
-                    m_state = WRITE_CONTENT;
-                } else {
+    std::string ct = "Content-Length: "
+        + tasks::tools::itostr<std::size_t>(m_content_buffer.size());
+    m_data_buffer.append(ct.c_str(), ct.length());
+    m_data_buffer.append(CRLF, CRLF_SIZE);
+    m_data_buffer.append(CRLF, CRLF_SIZE);
+}
+
+// We are reading things into the content buffer only.
+bool http_response::read_data(int fd) {
+    bool success = true;
+    if (READY == m_state) {
+        m_content_buffer.set_size(READ_BUFFER_SIZE_BLOCK);
+        m_state = READ_DATA;
+    }
+    if (DONE != m_state) {
+        ssize_t toread = 0, bytes = 0;
+        do {
+            toread = m_content_buffer.bytes_left() - 1;
+            if (toread < READ_BUFFER_SIZE_BLOCK - 1) {
+                m_content_buffer.set_size(m_content_buffer.buffer_size() + READ_BUFFER_SIZE_BLOCK);
+                toread = m_content_buffer.bytes_left() - 1;
+            }
+            bytes = recvfrom(fd, m_content_buffer.pointer(), toread, RECVFROM_FLAGS, nullptr, nullptr);
+            if (bytes < 0) {
+                if (errno != EAGAIN) {
+                    terr("http_response: error reading from client file descriptor " << fd << ", errno "
+                         << errno << std::endl);
+                    success = false;
+                }
+            } else if (bytes == 0) {
+                tdbg("http_response: client " << fd << " disconnected" << std::endl);
+                success = false;
+            } else if (bytes > 0) {
+                if (READ_DATA == m_state) {
+                    // Terminate the string for parsing
+                    *(m_content_buffer.pointer(m_content_buffer.offset() + bytes)) = 0;
+                    success = parse_data();
+                }
+                m_content_buffer.move_pointer(bytes);
+                tdbg("http_response: read data successfully, " << bytes << " bytes" << std::endl);
+                if (m_content_length == m_content_buffer.offset() - m_content_start) {
+                    *(m_content_buffer.pointer()) = 0;
+                    m_content_buffer.set_size(m_content_start + m_content_length);
+                    m_content_buffer.move_pointer_abs(m_content_start);
                     m_state = DONE;
                 }
-            }    
-        } else {
-            tdbg("http_response: no data bytes written" << std::endl);
-        }
+            }
+        } while (toread == bytes);
     }
-    // Write content buffer
-    if (WRITE_CONTENT == m_state) {
-        ssize_t bytes = sendto(fd, m_content_buffer.pointer(), m_content_buffer.bytes_left(),
-                               SENDTO_FLAGS, nullptr, 0);
-        if (bytes < 0 && errno != EAGAIN) {
-            terr("http_response: error writing to client file descriptor " << fd << ", errno "
-                 << errno << std::endl);
-            success = false;
-        } else if (bytes > 0) {
-            tdbg("http_response: wrote content successfully, " << bytes << "/" << m_content_buffer.size()
-                 << " bytes" << std::endl);
-            m_content_buffer.move_pointer(bytes);
-            if (!m_content_buffer.bytes_left()) {
-                m_state = DONE;
-            }    
-        } else {
-            tdbg("http_response: no data bytes written" << std::endl);
+    return success;
+}
+
+bool http_response::parse_data() {
+    bool success = true;
+    // find the next line break
+    char* eol = nullptr;
+    do {
+        if (*(m_content_buffer.pointer(m_last_line_start)) == '\n') {
+            m_last_line_start++;
         }
+        eol = std::strstr(m_content_buffer.pointer(m_last_line_start), CRLF);
+        if (nullptr != eol) {
+            std::size_t len = eol - m_content_buffer.pointer(m_last_line_start);
+            if (len) {
+                *eol = 0;
+                success = parse_line();
+                if (success) {
+                    m_last_line_start += len + 1;
+                }
+            } else {
+                // Second line break means content starts
+                if (m_chunked_enc) {
+                    success = false;
+                    terr("http_response: Chunked transfer encoding needs to be implemented!"
+                         << std::endl);
+                } else if (!m_content_length_exists) {
+                    success = false;
+                    terr("http_response: Invalid response: Content-Length header missing"
+                         << std::endl);
+                }
+                m_content_start = m_last_line_start + 1;
+                if (*(m_content_buffer.pointer(m_content_start)) == '\n') {
+                    m_content_start++;
+                }
+                tdbg("http_response: Content starts at " << m_content_start << std::endl);
+                m_state = READ_CONTENT;
+            }
+        }
+    } while (success && nullptr != eol && 0 == m_content_start);
+    return success;
+}
+
+bool http_response::parse_line() {
+    bool success = true;
+    if (0 == m_line_number) {
+        success = parse_status();
+    } else {
+        success = parse_header();
+    }
+    m_line_number++;
+    return success;
+}
+
+bool http_response::parse_status() {
+    // HTTP/#.# ### text
+    // Skip the first 5 bytes "HTTP/"
+    const char* space = std::strchr(m_content_buffer.pointer(m_last_line_start + 5), ' ');
+    m_status = space + 1;
+    m_status_code = std::atoi(space + 1);
+    tdbg("http_response: Status is " << m_status << std::endl);
+    return (m_status_code > 99 && m_status_code < 1000);
+}
+
+bool http_response::parse_header() {
+    bool success = true;
+    char* eq = std::strchr(m_content_buffer.pointer(m_last_line_start), ':');
+    if (nullptr != eq) {
+        *eq = 0;
+        do {
+            eq++;
+        } while (*eq == ' ');   
+        auto pair = m_headers.insert(std::make_pair(std::string(m_content_buffer.pointer(m_last_line_start)),
+                                                    std::string(eq)));
+        if (pair.second) {
+            tdbg("http_response: Header: " << pair.first->first
+                 << " = " << pair.first->second << std::endl);
+            if (pair.first->first == "Content-Length") {
+                m_content_length = atoi(eq);
+                m_content_length_exists = true;
+                tdbg("http_response: Setting content length to " << m_content_length << std::endl);
+            } else if (pair.first->first == "Transfer-Encoding") {
+                if (pair.first->second == "chunked") {
+                    m_chunked_enc = true;
+                }
+            }
+        }
+    } else {
+        terr("http_response: Invalid header: " << m_content_buffer.pointer(m_last_line_start)
+             << std::endl);
+        success = false;
     }
     return success;
 }
