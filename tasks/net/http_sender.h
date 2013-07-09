@@ -102,7 +102,6 @@ public:
             }
             int fd = socket(PF_INET, SOCK_STREAM, 0);
             assert(fd > 0);
-            //assert(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == 0);
             struct sockaddr_in addr = {0};
             addr.sin_family = AF_INET;
             std::memcpy(&addr.sin_addr, remote->h_addr_list[0], remote->h_length);
@@ -113,6 +112,7 @@ public:
                      << std::endl);
                 return false;
             }
+            assert(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == 0);
             tdbg("http_sender: Connection to " << m_host << ":" << m_port << " successful"
                  << std::endl);
             set_fd(fd);
