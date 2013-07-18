@@ -23,46 +23,92 @@
 #include <vector>
 #include <cstring>
 #include <cassert>
+#include <streambuf>
 
 namespace tasks {
 namespace tools {
 
-class buffer {
+class buffer : public std::streambuf {
 public:
-	inline char* pointer() {
-		return &m_buffer[m_offset];
+    buffer() {
+        setg(ptr_begin(), ptr_begin(), ptr_end());
+        setp(ptr_begin(), ptr_end());
+    }
+    
+	inline char* ptr_write() {
+		return pptr();
 	}
 
-	inline const char* pointer() const {
-		return &m_buffer[m_offset];
+	inline const char* ptr_write() const {
+		return pptr();
 	}
 
-	inline char* pointer(std::size_t pos) {
+    inline char* ptr_read() {
+		return gptr();
+	}
+
+	inline const char* ptr_read() const {
+		return gptr();
+	}
+
+	inline char* ptr(std::size_t pos) {
 		assert(pos <= m_size);
 		return &m_buffer[pos];
 	}
 
-	inline const char* pointer(std::size_t pos) const {
+	inline const char* ptr(std::size_t pos) const {
 		assert(pos <= m_size);
 		return &m_buffer[pos];
 	}
 
-    inline std::size_t offset() const {
-        return m_offset;
+    inline char* ptr_begin() {
+        return &m_buffer[0];
     }
 
-	inline void move_pointer(std::size_t s) {
-		m_offset += s;
-		assert(m_offset <= m_size);
+    inline const char* ptr_begin() const {
+        return &m_buffer[0];
+    }
+
+    inline char* ptr_end() {
+        return &m_buffer[m_size];
+    }
+    
+    inline const char* ptr_end() const {
+        return &m_buffer[m_size];
+    }
+    
+    inline std::size_t offset_write() const {
+        return pptr() - ptr_begin();
+    }
+
+    inline std::size_t offset_read() const {
+        return gptr() - ptr_begin();
+    }
+
+	inline void move_ptr_write(std::size_t s) {
+        auto owrite = offset_write();
+        setp(ptr(owrite + s), ptr_end());
 	}
 
-	inline void move_pointer_abs(std::size_t pos) {
-		m_offset = pos;
-		assert(m_offset <= m_size);
+    inline void move_ptr_read(std::size_t s) {
+        auto oread = offset_read();
+        setg(ptr_begin(), ptr(oread + s), ptr_end());
 	}
 
-	inline std::size_t bytes_left() const {
-		return m_size - m_offset;
+	inline void move_ptr_write_abs(std::size_t pos) {
+        setp(ptr(pos), ptr_end());
+	}
+
+	inline void move_ptr_read_abs(std::size_t pos) {
+        setg(ptr_begin(), ptr(pos), ptr_end());
+	}
+
+	inline std::size_t to_write() const {
+		return ptr_end() - pptr();
+	}
+
+	inline std::size_t to_read() const {
+		return ptr_end() - gptr();
 	}
 
 	inline std::size_t size() const {
@@ -70,33 +116,55 @@ public:
 	}
 
 	inline void set_size(std::size_t s) {
+        auto oread = offset_read();
+        auto owrite = offset_write();
 		if (m_buffer.size() < s) {
-			m_buffer.resize(s);
+			m_buffer.resize(s + 1024);
 		}
 		m_size = s;
-	}
+        setg(ptr_begin(), ptr(oread), ptr_end());
+        setp(ptr(owrite), ptr_end());
+ 	}
+
+    inline void shrink() {
+        m_buffer.resize(m_size);
+    }
 	
 	inline std::size_t buffer_size() {
 		return m_buffer.size();
 	}
-
-	inline void resize(std::size_t s) {
-		m_buffer.resize(s);
-	}
 	
-	inline void append(const void* data, std::size_t size) {
-		if (m_buffer.size() < m_size + size) {
-			m_buffer.resize(m_size + size + 1024);
-		}
-		std::memcpy(&m_buffer[m_size], data, size);
-		m_size += size;
+	inline std::streamsize write(const char_type* data, std::streamsize size) {
+        return xsputn(data, size);
 	}
+
+    inline std::streamsize read(char_type* data, std::streamsize size) {
+        return xsgetn(data, size);
+    }
 		
 	inline void clear() {
 		m_size = 0;
-		m_offset = 0;
+        setg(ptr_begin(), ptr_begin(), ptr_end());
+        setp(ptr_begin(), ptr_end());
 	}
-	
+
+protected:
+    // std::streambuf override
+    std::streamsize xsputn(const char_type* s, std::streamsize count) {
+        set_size(m_size + count);
+        return std::streambuf::xsputn(s, count);
+    }
+    
+    // std::streambuf override
+    std::streamsize xsgetn(char_type* s, std::streamsize count) {
+        auto size = count;
+        auto bytes_left = to_read();
+        if (size > bytes_left) {
+            size = bytes_left;
+        }
+        return std::streambuf::xsgetn(s, size);
+    }
+
 private:
 	std::vector<char> m_buffer;
 	std::size_t m_size = 0;

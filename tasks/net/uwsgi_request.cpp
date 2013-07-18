@@ -55,7 +55,7 @@ bool uwsgi_request::read_data(int fd) {
 		}
 	}
 	if (success && READ_DATA == m_state) {
-		ssize_t bytes = recvfrom(fd, m_data_buffer.pointer(), m_data_buffer.bytes_left(),
+		ssize_t bytes = recvfrom(fd, m_data_buffer.ptr_write(), m_data_buffer.to_write(),
 								 RECVFROM_FLAGS, nullptr, nullptr);
 		if (bytes < 0) {
 			if (errno != EAGAIN) {
@@ -67,10 +67,10 @@ bool uwsgi_request::read_data(int fd) {
 			tdbg("uwsgi_request: client " << fd << " disconnected" << std::endl);
 			success = false;
 		} else if (bytes > 0) {
-			m_data_buffer.move_pointer(bytes);
+			m_data_buffer.move_ptr_write(bytes);
 			tdbg("uwsgi_request: read data successfully, " << bytes << " bytes" << std::endl);
 		}
-		if (success && !m_data_buffer.bytes_left()) {
+		if (success && !m_data_buffer.to_write()) {
 			if (UWSGI_VARS == m_header.modifier1) {
 				success = read_vars();
 				if (success) {
@@ -88,7 +88,7 @@ bool uwsgi_request::read_data(int fd) {
 		}
 	}
 	if (success && READ_CONTENT == m_state) {
-		ssize_t bytes = recvfrom(fd, m_content_buffer.pointer(), m_content_buffer.bytes_left(),
+		ssize_t bytes = recvfrom(fd, m_content_buffer.ptr_write(), m_content_buffer.to_write(),
 								 RECVFROM_FLAGS, nullptr, nullptr);
 		if (bytes < 0) {
 			if (errno != EAGAIN) {
@@ -100,13 +100,13 @@ bool uwsgi_request::read_data(int fd) {
 			tdbg("uwsgi_request: client " << fd << " disconnected" << std::endl);
 			success = false;
 		} else if (bytes > 0) {
-			m_content_buffer.move_pointer(bytes);
+			m_content_buffer.move_ptr_write(bytes);
 			tdbg("uwsgi_request: read data successfully, " << bytes << " bytes" << std::endl);
 		}
-		if (success && !m_content_buffer.bytes_left()) {
+		if (success && !m_content_buffer.to_write()) {
 			m_state = DONE;
 			// Move the pointer the start to enable reading from the buffer. 
-			m_content_buffer.move_pointer_abs(0);
+			//m_content_buffer.move_ptr_abs(0);
 		}
 	}
 	return success;
@@ -115,13 +115,13 @@ bool uwsgi_request::read_data(int fd) {
 bool uwsgi_request::read_vars() {
 	std::size_t pos = 0;
 	while (pos < m_data_buffer.size()) {
-		uint16_t key_len= *((uint16_t*) m_data_buffer.pointer(pos));
+		uint16_t key_len= *((uint16_t*) m_data_buffer.ptr(pos));
 		uint16_t key_start = pos + 2;
-		uint16_t val_len = *((uint16_t*) m_data_buffer.pointer(key_start + key_len));
+		uint16_t val_len = *((uint16_t*) m_data_buffer.ptr(key_start + key_len));
 		uint16_t val_start = key_start + key_len + 2;
 		if (key_len && val_len) {
-			m_vars.insert(std::make_pair(std::string(m_data_buffer.pointer(key_start), key_len),
-										 std::string(m_data_buffer.pointer(val_start), val_len)));
+			m_vars.insert(std::make_pair(std::string(m_data_buffer.ptr(key_start), key_len),
+										 std::string(m_data_buffer.ptr(val_start), val_len)));
 		}
 		pos = val_start + val_len;
 	}

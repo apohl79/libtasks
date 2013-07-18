@@ -73,20 +73,20 @@ public:
         return m_content_length;
     }
 
-    inline void append(std::string s) {
-        m_content_buffer.append(s.c_str(), s.length());
+    inline void write(std::string s) {
+        m_content_buffer.write(s.c_str(), s.length());
     }
 
-    inline void append(const void* data, std::size_t size) {
-        m_content_buffer.append(data, size);
+    inline void write(const char* data, std::size_t size) {
+        m_content_buffer.write(data, size);
     }
 
-    inline std::size_t copy(void *data, std::size_t size) {
-		if (m_content_buffer.bytes_left() < size) {
-			size = m_content_buffer.bytes_left();
+    inline std::size_t read(char* data, std::size_t size) {
+		if (m_content_buffer.to_read() < size) {
+			size = m_content_buffer.to_read();
 		}
-		std::memcpy(data, m_content_buffer.pointer(), size);
-		m_content_buffer.move_pointer(size);
+		std::memcpy(data, m_content_buffer.ptr_read(), size);
+		m_content_buffer.move_ptr_read(size);
 		return size;
     }
 
@@ -97,9 +97,9 @@ public:
     bool read_data(int fd);
 
     inline void print() const {
-        std::cout << std::string(m_data_buffer.pointer(0), m_data_buffer.size());
+        std::cout << std::string(m_data_buffer.ptr(0), m_data_buffer.size());
         if (m_content_buffer.size()) {
-            std::cout << std::string(m_content_buffer.pointer(0), m_content_buffer.size());
+            std::cout << std::string(m_content_buffer.ptr(0), m_content_buffer.size());
         }
     }
 

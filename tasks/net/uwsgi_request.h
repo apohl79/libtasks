@@ -69,16 +69,16 @@ public:
 		}
 	}
 
-	inline void append(const void* data, std::size_t size) {
-		m_content_buffer.append(data, size);
+	inline void write(const char* data, std::size_t size) {
+		m_content_buffer.write(data, size);
 	}
 
-	inline std::size_t copy(void* data, std::size_t size) {
-		if (m_content_buffer.bytes_left() < size) {
-			size = m_content_buffer.bytes_left();
+	inline std::size_t read(char* data, std::size_t size) {
+		if (m_content_buffer.to_read() < size) {
+			size = m_content_buffer.to_read();
 		}
-		std::memcpy(data, m_content_buffer.pointer(), size);
-		m_content_buffer.move_pointer(size);
+		std::memcpy(data, m_content_buffer.ptr_read(), size);
+		m_content_buffer.move_ptr_read(size);
 		return size;
 	}
 

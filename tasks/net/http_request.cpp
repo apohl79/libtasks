@@ -33,27 +33,27 @@ void http_request::prepare_data_buffer() {
     std::string ctlen;
     // GET/POST
     if (m_content_buffer.size()) {
-        m_data_buffer.append("POST ", 5);
+        m_data_buffer.write("POST ", 5);
         ctlen = "Content-Length: "
             + tasks::tools::itostr<std::size_t>(m_content_buffer.size());
     } else {
-        m_data_buffer.append("GET ", 4);
+        m_data_buffer.write("GET ", 4);
     }
-    m_data_buffer.append(m_url.c_str(), m_url.length());
-    m_data_buffer.append(" HTTP/1.1", 9);
-    m_data_buffer.append(CRLF, CRLF_SIZE);
+    m_data_buffer.write(m_url.c_str(), m_url.length());
+    m_data_buffer.write(" HTTP/1.1", 9);
+    m_data_buffer.write(CRLF, CRLF_SIZE);
     // Headers
     for (auto kv : m_headers) {
-        m_data_buffer.append(kv.first.c_str(), kv.first.length());
-        m_data_buffer.append(": ", 2);
-        m_data_buffer.append(kv.second.c_str(), kv.second.length());
-        m_data_buffer.append(CRLF, CRLF_SIZE);
+        m_data_buffer.write(kv.first.c_str(), kv.first.length());
+        m_data_buffer.write(": ", 2);
+        m_data_buffer.write(kv.second.c_str(), kv.second.length());
+        m_data_buffer.write(CRLF, CRLF_SIZE);
     }
     // Content length
-    m_data_buffer.append(ctlen.c_str(), ctlen.length());
+    m_data_buffer.write(ctlen.c_str(), ctlen.length());
     // End
-    m_data_buffer.append(CRLF, CRLF_SIZE);
-    m_data_buffer.append(CRLF, CRLF_SIZE);
+    m_data_buffer.write(CRLF, CRLF_SIZE);
+    m_data_buffer.write(CRLF, CRLF_SIZE);
 }
 
 } // net

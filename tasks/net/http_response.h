@@ -52,7 +52,7 @@ public:
 
     inline const char* content_p() const {
         if (m_content_length) {
-            return m_content_buffer.pointer();
+            return m_content_buffer.ptr_read();
         }
         return nullptr;
     }

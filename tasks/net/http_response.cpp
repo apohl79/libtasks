@@ -31,21 +31,21 @@ namespace net {
 
 void http_response::prepare_data_buffer() {
     // Status line
-    m_data_buffer.append("HTTP/1.1 ", 9);
-    m_data_buffer.append(m_status.c_str(), m_status.length());
-    m_data_buffer.append(CRLF, CRLF_SIZE);
+    m_data_buffer.write("HTTP/1.1 ", 9);
+    m_data_buffer.write(m_status.c_str(), m_status.length());
+    m_data_buffer.write(CRLF, CRLF_SIZE);
     // Headers
     for (auto kv : m_headers) {
-        m_data_buffer.append(kv.first.c_str(), kv.first.length());
-        m_data_buffer.append(": ", 2);
-        m_data_buffer.append(kv.second.c_str(), kv.second.length());
-        m_data_buffer.append(CRLF, CRLF_SIZE);
+        m_data_buffer.write(kv.first.c_str(), kv.first.length());
+        m_data_buffer.write(": ", 2);
+        m_data_buffer.write(kv.second.c_str(), kv.second.length());
+        m_data_buffer.write(CRLF, CRLF_SIZE);
     }
     std::string ct = "Content-Length: "
         + tasks::tools::itostr<std::size_t>(m_content_buffer.size());
-    m_data_buffer.append(ct.c_str(), ct.length());
-    m_data_buffer.append(CRLF, CRLF_SIZE);
-    m_data_buffer.append(CRLF, CRLF_SIZE);
+    m_data_buffer.write(ct.c_str(), ct.length());
+    m_data_buffer.write(CRLF, CRLF_SIZE);
+    m_data_buffer.write(CRLF, CRLF_SIZE);
 }
 
 // We are reading things into the content buffer only.
@@ -56,14 +56,14 @@ bool http_response::read_data(int fd) {
         m_state = READ_DATA;
     }
     if (DONE != m_state) {
-        ssize_t toread = 0, bytes = 0;
+        ssize_t towrite = 0, bytes = 0;
         do {
-            toread = m_content_buffer.bytes_left() - 1;
-            if (toread < READ_BUFFER_SIZE_BLOCK - 1) {
+            towrite = m_content_buffer.to_write() - 1;
+            if (towrite < READ_BUFFER_SIZE_BLOCK - 1) {
                 m_content_buffer.set_size(m_content_buffer.buffer_size() + READ_BUFFER_SIZE_BLOCK);
-                toread = m_content_buffer.bytes_left() - 1;
+                towrite = m_content_buffer.to_write() - 1;
             }
-            bytes = recvfrom(fd, m_content_buffer.pointer(), toread, RECVFROM_FLAGS, nullptr, nullptr);
+            bytes = recvfrom(fd, m_content_buffer.ptr_write(), towrite, RECVFROM_FLAGS, nullptr, nullptr);
             if (bytes < 0) {
                 if (errno != EAGAIN) {
                     terr("http_response: error reading from client file descriptor " << fd << ", errno "
@@ -74,21 +74,21 @@ bool http_response::read_data(int fd) {
                 tdbg("http_response: client " << fd << " disconnected" << std::endl);
                 success = false;
             } else if (bytes > 0) {
+                m_content_buffer.move_ptr_write(bytes);
                 if (READ_DATA == m_state) {
                     // Terminate the string for parsing
-                    *(m_content_buffer.pointer(m_content_buffer.offset() + bytes)) = 0;
+                    *(m_content_buffer.ptr_write()) = 0;
                     success = parse_data();
                 }
-                m_content_buffer.move_pointer(bytes);
                 tdbg("http_response: read data successfully, " << bytes << " bytes" << std::endl);
-                if (m_content_length == m_content_buffer.offset() - m_content_start) {
-                    *(m_content_buffer.pointer()) = 0;
-                    m_content_buffer.set_size(m_content_start + m_content_length);
-                    m_content_buffer.move_pointer_abs(m_content_start);
+                if (m_content_length == m_content_buffer.offset_write() - m_content_start) {
+                    *(m_content_buffer.ptr_write()) = 0;
+                    //m_content_buffer.set_size(m_content_start + m_content_length);
+                    m_content_buffer.move_ptr_read_abs(m_content_start);
                     m_state = DONE;
                 }
             }
-        } while (toread == bytes);
+        } while (towrite == bytes);
     }
     return success;
 }
@@ -98,12 +98,12 @@ bool http_response::parse_data() {
     // find the next line break
     char* eol = nullptr;
     do {
-        if (*(m_content_buffer.pointer(m_last_line_start)) == '\n') {
+        if (*(m_content_buffer.ptr(m_last_line_start)) == '\n') {
             m_last_line_start++;
         }
-        eol = std::strstr(m_content_buffer.pointer(m_last_line_start), CRLF);
+        eol = std::strstr(m_content_buffer.ptr(m_last_line_start), CRLF);
         if (nullptr != eol) {
-            std::size_t len = eol - m_content_buffer.pointer(m_last_line_start);
+            std::size_t len = eol - m_content_buffer.ptr(m_last_line_start);
             if (len) {
                 *eol = 0;
                 success = parse_line();
@@ -122,7 +122,7 @@ bool http_response::parse_data() {
                          << std::endl);
                 }
                 m_content_start = m_last_line_start + 1;
-                if (*(m_content_buffer.pointer(m_content_start)) == '\n') {
+                if (*(m_content_buffer.ptr(m_content_start)) == '\n') {
                     m_content_start++;
                 }
                 tdbg("http_response: Content starts at " << m_content_start << std::endl);
@@ -147,7 +147,7 @@ bool http_response::parse_line() {
 bool http_response::parse_status() {
     // HTTP/#.# ### text
     // Skip the first 5 bytes "HTTP/"
-    const char* space = std::strchr(m_content_buffer.pointer(m_last_line_start + 5), ' ');
+    const char* space = std::strchr(m_content_buffer.ptr(m_last_line_start + 5), ' ');
     m_status = space + 1;
     m_status_code = std::atoi(space + 1);
     tdbg("http_response: Status is " << m_status << std::endl);
@@ -156,13 +156,13 @@ bool http_response::parse_status() {
 
 bool http_response::parse_header() {
     bool success = true;
-    char* eq = std::strchr(m_content_buffer.pointer(m_last_line_start), ':');
+    char* eq = std::strchr(m_content_buffer.ptr(m_last_line_start), ':');
     if (nullptr != eq) {
         *eq = 0;
         do {
             eq++;
         } while (*eq == ' ');   
-        auto pair = m_headers.insert(std::make_pair(std::string(m_content_buffer.pointer(m_last_line_start)),
+        auto pair = m_headers.insert(std::make_pair(std::string(m_content_buffer.ptr(m_last_line_start)),
                                                     std::string(eq)));
         if (pair.second) {
             tdbg("http_response: Header: " << pair.first->first
@@ -178,7 +178,7 @@ bool http_response::parse_header() {
             }
         }
     } else {
-        terr("http_response: Invalid header: " << m_content_buffer.pointer(m_last_line_start)
+        terr("http_response: Invalid header: " << m_content_buffer.ptr(m_last_line_start)
              << std::endl);
         success = false;
     }
