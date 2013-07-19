@@ -50,13 +50,6 @@ public:
         return m_status_code;
     }
 
-    inline const char* content_p() const {
-        if (m_content_length) {
-            return m_content_buffer.ptr_read();
-        }
-        return nullptr;
-    }
-
     void prepare_data_buffer();
     
     bool read_data(int fd);
