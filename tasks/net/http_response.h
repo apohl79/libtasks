@@ -29,14 +29,13 @@
 #endif
 
 #include <tasks/net/http_base.h>
-#include <istream>
 
 namespace tasks {
 namespace net {
 
 class http_response : public http_base {
 public:
-    http_response() : m_content_istream(&m_content_buffer) {}
+    http_response() {}
 
     inline void set_status(std::string status) {
         m_status = status;
@@ -56,10 +55,6 @@ public:
             return m_content_buffer.ptr_read();
         }
         return nullptr;
-    }
-
-    inline std::istream& content_istream() {
-        return m_content_istream;
     }
 
     void prepare_data_buffer();
@@ -84,7 +79,6 @@ private:
     std::size_t m_content_start = 0;
     bool m_content_length_exists = false;
     bool m_chunked_enc = false;
-    std::istream m_content_istream;
 
     bool parse_data();
     bool parse_line();
