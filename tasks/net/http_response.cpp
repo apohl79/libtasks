@@ -21,8 +21,9 @@
 #include <cstring>
 #include <cstdlib>
 #include <sys/socket.h>
-#include <tasks/logging.h>
+#include <boost/algorithm/string/predicate.hpp>
 
+#include <tasks/logging.h>
 #include <tasks/net/http_response.h>
 #include <tasks/tools/itostr.h>
 
@@ -167,11 +168,11 @@ bool http_response::parse_header() {
         if (pair.second) {
             tdbg("http_response: Header: " << pair.first->first
                  << " = " << pair.first->second << std::endl);
-            if (pair.first->first == "Content-Length") {
+            if (boost::iequals(pair.first->first, "Content-Length")) {
                 m_content_length = atoi(eq);
                 m_content_length_exists = true;
                 tdbg("http_response: Setting content length to " << m_content_length << std::endl);
-            } else if (pair.first->first == "Transfer-Encoding") {
+            } else if (boost::iequals(pair.first->first, "Transfer-Encoding")) {
                 if (pair.first->second == "chunked") {
                     m_chunked_enc = true;
                 }

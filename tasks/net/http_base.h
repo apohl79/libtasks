@@ -24,6 +24,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include <tasks/net/io_state.h>
 #include <tasks/tools/buffer.h>
@@ -56,7 +57,7 @@ public:
 
     inline void set_header(std::string header, std::string value) {
         m_headers[header] = value;
-        if (header == "Content-Length") {
+        if (boost::iequals(header, "Content-Length")) {
             m_content_length = std::atoi(value.c_str());
         }
     }
