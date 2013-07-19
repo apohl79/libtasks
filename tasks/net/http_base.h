@@ -22,6 +22,8 @@
 
 #include <unordered_map>
 #include <iostream>
+#include <istream>
+#include <ostream>
 #include <cstring>
 #include <cstdlib>
 #include <boost/algorithm/string/predicate.hpp>
@@ -45,6 +47,10 @@ class http_base {
 public:
     static const std::string NO_VAL;
 
+    http_base()
+        : m_content_istream(&m_content_buffer),
+          m_content_ostream(&m_content_buffer) {}
+    
     virtual ~http_base() {}
 
     inline void set_state(io_state state) {
@@ -74,21 +80,31 @@ public:
         return m_content_length;
     }
 
-    inline void write(std::string s) {
-        m_content_buffer.write(s.c_str(), s.length());
+    inline const char* content_p() const {
+        if (m_content_length) {
+            return m_content_buffer.ptr_read();
+        }
+        return nullptr;
     }
 
-    inline void write(const char* data, std::size_t size) {
-        m_content_buffer.write(data, size);
+    inline std::size_t write(std::string s) {
+        return m_content_buffer.write(s.c_str(), s.length());
+    }
+
+    inline std::size_t write(const char* data, std::size_t size) {
+        return m_content_buffer.write(data, size);
     }
 
     inline std::size_t read(char* data, std::size_t size) {
-		if (m_content_buffer.to_read() < size) {
-			size = m_content_buffer.to_read();
-		}
-		std::memcpy(data, m_content_buffer.ptr_read(), size);
-		m_content_buffer.move_ptr_read(size);
-		return size;
+        return m_content_buffer.read(data, size);
+    }
+
+    inline std::istream& content_istream() {
+        return m_content_istream;
+    }
+
+    inline std::ostream& content_ostream() {
+        return m_content_ostream;
     }
 
     virtual void prepare_data_buffer() = 0;
@@ -124,7 +140,8 @@ protected:
     io_state m_state = READY;
     std::unordered_map<std::string, std::string> m_headers;
     std::size_t m_content_length = 0;
-
+    std::istream m_content_istream;
+    std::ostream m_content_ostream;
 
     bool write_headers(int fd);
     bool write_content(int fd);
