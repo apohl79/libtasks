@@ -84,7 +84,7 @@ bool http_response::read_data(int fd) {
                 tdbg("http_response: read data successfully, " << bytes << " bytes" << std::endl);
                 if (m_content_length == m_content_buffer.offset_write() - m_content_start) {
                     *(m_content_buffer.ptr_write()) = 0;
-                    //m_content_buffer.set_size(m_content_start + m_content_length);
+                    m_content_buffer.set_size(m_content_start + m_content_length);
                     m_content_buffer.move_ptr_read_abs(m_content_start);
                     m_state = DONE;
                 }
