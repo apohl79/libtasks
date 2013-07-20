@@ -27,7 +27,29 @@ namespace tasks {
 
 class worker;
 
-typedef std::function<void(worker* worker)> task_finish_func;
+typedef std::function<void (worker* worker)> task_finish_func_worker;
+typedef std::function<void ()> task_finish_func_void;
+struct task_finish_func {
+    task_finish_func(task_finish_func_worker f)
+        : m_type(0), m_f_worker(f) {}
+    task_finish_func(task_finish_func_void f)
+        : m_type(1), m_f_void(f) {}
+
+    void operator()(worker* worker) {
+        switch (m_type) {
+        case 0:
+            m_f_worker(worker);
+            break;
+        case 1:
+            m_f_void();
+            break;
+        }
+    }
+
+    int m_type = 0;
+    task_finish_func_worker m_f_worker;
+    task_finish_func_void m_f_void;
+};
 
 class task {
 public:
@@ -64,8 +86,12 @@ public:
 
 	// If a task finishes it can execute callback functions. Note that no locks will be used at this
 	// level.
-	inline void on_finish(task_finish_func f) {
-		m_finish_funcs.push_back(f);
+	inline void on_finish(task_finish_func_worker f) {
+		m_finish_funcs.push_back(task_finish_func(f));
+	}
+
+	inline void on_finish(task_finish_func_void f) {
+		m_finish_funcs.push_back(task_finish_func(f));
 	}
 
 private:
