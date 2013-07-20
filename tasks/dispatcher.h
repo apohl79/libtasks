@@ -63,8 +63,11 @@ public:
     void run(int num, task* task, ...);
 
     // Terminate the workers and die.
-    void finish();
-        
+    inline void terminate() {
+        m_term.store(true);
+        m_finish_cond.notify_one();
+    }
+    
 private:
     static std::shared_ptr<dispatcher> m_instance;
         
@@ -82,6 +85,8 @@ private:
 
     ev_signal m_signal;
 
+    std::atomic<bool> m_term;
+    
     // Helper to start initial tasks
     bool start_io_task(task* task);
     bool start_timer_task(task* task);

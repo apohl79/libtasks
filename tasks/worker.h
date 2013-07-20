@@ -101,8 +101,15 @@ public:
 	}
 
 	inline void terminate() {
+        tdbg(get_string() << ": waiting to terminate thread" << std::endl);
 		m_term.store(true);
 		m_work_cond.notify_one();
+        if (m_leader) {
+            // interrupt the event loop
+            ev_async_send(ev_default_loop(0), &m_signal_watcher);
+        }
+        m_thread.join();
+        tdbg(get_string() << ": thread done" << std::endl);
 	}
 
 	inline void add_event(event e) {
@@ -154,13 +161,14 @@ static void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events) 
 	worker* worker = (tasks::worker*) ev_userdata(loop);
 	assert(nullptr != worker);
 	task_func_queue* tfq = (tasks::task_func_queue*) w->data;
-	assert(nullptr != tfq);
-	std::lock_guard<std::mutex> lock(tfq->mutex);
-	// Execute all queued functors
-	while (!tfq->queue.empty()) {
-		assert(worker->signal_call(tfq->queue.front()));
-		tfq->queue.pop();
-	}
+	if (nullptr != tfq) {
+        std::lock_guard<std::mutex> lock(tfq->mutex);
+        // Execute all queued functors
+        while (!tfq->queue.empty()) {
+            assert(worker->signal_call(tfq->queue.front()));
+            tfq->queue.pop();
+        }
+    }
 }
 
 } // tasks

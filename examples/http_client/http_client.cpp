@@ -35,13 +35,14 @@ public:
 };
 
 int main(int argc, char** argv) {
-    std::cout << "Press ctrl+c to quit" << std::endl << std::endl;
-    
     // initialize the dispatcher first
-    std::shared_ptr<tasks::dispatcher> disp = tasks::dispatcher::instance();
-    tasks::net::http_sender<test_handler>* sender = new tasks::net::http_sender<test_handler>();
-    std::shared_ptr<tasks::net::http_request> request =
-        std::make_shared<tasks::net::http_request>("www.google.com", "/");
+    auto disp = tasks::dispatcher::instance();
+    auto* sender = new tasks::net::http_sender<test_handler>();
+    // after sending the request we terminate the dispatcher and exit
+    sender->on_finish([]{
+            tasks::dispatcher::instance()->terminate();
+        });
+    auto request = std::make_shared<tasks::net::http_request>("www.google.com", "/");
     if (sender->send(request)) {
         disp->run(1, sender);
     } else {

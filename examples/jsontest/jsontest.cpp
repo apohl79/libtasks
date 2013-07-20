@@ -61,11 +61,13 @@ public:
 };
 
 int main(int argc, char** argv) {
-    std::cout << "Press ctrl+c to quit" << std::endl << std::endl;
-    
     // initialize the dispatcher first
     auto disp = tasks::dispatcher::instance();
     auto* sender = new tasks::net::http_sender<json_handler>();
+    // after sending the request we terminate the dispatcher and exit
+    sender->on_finish([]{
+            tasks::dispatcher::instance()->terminate();
+        });
     auto request = std::make_shared<tasks::net::http_request>("graph.facebook.com",
                                                               "/search?q=test");
     if (sender->send(request)) {
