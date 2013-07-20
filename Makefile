@@ -14,7 +14,7 @@ $(EXAMPLES):
 	done 
 
 clean:
-	cd tasks && $(MAKE) clean && cd -
+	cd tasks; $(MAKE) clean; cd -
 	for e in examples/*; do \
-	  cd $$e && $(MAKE) clean && cd - ; \
+	  cd $$e; $(MAKE) clean; cd - ; \
 	done 
