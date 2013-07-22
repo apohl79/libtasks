@@ -22,8 +22,8 @@
 
 namespace tasks {
 
-worker::worker(int id) : m_id(id), m_thread(&worker::run, this) {
-    m_term.store(false);
+worker::worker(uint8_t id) : m_id(id), m_term(false), m_leader(false),
+                             m_thread(&worker::run, this) {
     // Initialize and add the threads async watcher
     ev_async_init(&m_signal_watcher, tasks_async_callback);
     m_signal_watcher.data = new task_func_queue;
@@ -80,14 +80,14 @@ void worker::run() {
         }
 
         if (!m_term) {
-            // Add this worker as available worker
+            // Mark this worker as available worker
             dispatcher::instance()->add_free_worker(id());
         } else {
             // Shutdown, the leader terminates the loop
             if (m_leader) {
                 // FIXME: Iterate over all watchers and delete
                 // registered tasks.
-                ev_unloop (m_loop->loop, EVUNLOOP_ALL);
+                ev_unloop(m_loop->loop, EVUNLOOP_ALL);
             }
         }
     }

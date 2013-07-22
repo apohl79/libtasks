@@ -21,12 +21,13 @@
 #define _TASKS_DISPATCHER_H_
 
 #include <vector>
-#include <queue>
 #include <condition_variable>
 #include <mutex>
 #include <memory>
 #include <atomic>
+
 #include <tasks/ev_wrapper.h>
+#include <tasks/tools/bitset.h>
 
 namespace tasks {
         
@@ -50,7 +51,7 @@ public:
     std::shared_ptr<worker> free_worker();
 
     // When a worker finishes his work he returns to the free worker queue.
-    void add_free_worker(int id);
+    void add_free_worker(uint8_t id);
 
     // Returns the first worker from the workers vector. This can be useful
     // to add tasks in situations where a worker handle is not available.
@@ -70,14 +71,13 @@ public:
     
 private:
     static std::shared_ptr<dispatcher> m_instance;
-        
+
     // All worker threads
     std::vector<std::shared_ptr<worker> > m_workers;
-    int m_num_workers = 0;
+    uint8_t m_num_workers = 0;
 
-    // Free workers queue up here (TODO: implement lock free queue)
-    std::queue<int> m_worker_queue;
-    std::mutex m_worker_mutex;
+    // State of the workers
+    tools::bitset m_workers_active;
 
     // Condition variable/mutex used to wait for finishing up 
     std::condition_variable m_finish_cond;

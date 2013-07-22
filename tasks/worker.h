@@ -63,16 +63,16 @@ struct event {
 		
 class worker {
 public:
-	worker(int id);
+	worker(uint8_t id);
 	virtual ~worker();
 
-	inline int id() const {
+	inline uint8_t id() const {
 		return m_id;
 	}
 
 	inline std::string get_string() const {
 		std::ostringstream os;
-		os << "worker(" << m_id << ")";
+		os << "worker(" << (unsigned int) m_id << ")";
 		return os.str();
 	}
 
@@ -95,14 +95,14 @@ public:
 
 	inline void set_event_loop(std::unique_ptr<loop_wrapper> loop) {
 		m_loop = std::move(loop);
-		m_leader.store(true);
+ 		m_leader = true;
 		ev_set_userdata(m_loop->loop, this);
 		m_work_cond.notify_one();
 	}
 
 	inline void terminate() {
         tdbg(get_string() << ": waiting to terminate thread" << std::endl);
-		m_term.store(true);
+		m_term = true;
 		m_work_cond.notify_one();
         if (m_leader) {
             // interrupt the event loop
@@ -120,7 +120,7 @@ public:
 	void handle_timer_event(ev_timer* watcher);
 		
 private:
-	int m_id;
+	uint8_t m_id;
 	std::thread m_thread;
 	std::unique_ptr<loop_wrapper> m_loop;
 	std::atomic<bool> m_leader;
@@ -138,7 +138,7 @@ private:
 		if (nullptr != w) {
 			// If we find a free worker, we promote it to the next
 			// leader. This thread stays leader otherwise.
-			m_leader.store(false);
+			m_leader = false;
 			w->set_event_loop(std::move(m_loop));
 		}
 	}

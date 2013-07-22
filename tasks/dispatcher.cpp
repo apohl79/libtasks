@@ -38,22 +38,20 @@ static void handle_signal(struct ev_loop* loop, ev_signal* sig, int revents) {
     d->terminate();
 }
 
-dispatcher::dispatcher() {
-    m_term.store(false);
+dispatcher::dispatcher()
+    : m_term(false),
+      m_num_workers(sysconf(_SC_NPROCESSORS_ONLN) * 2),
+      m_workers_active(tools::bitset(m_num_workers)) {
+    
     // Initialize the event loop structure
     ev_default_loop(0);
     // Create workers 
-    m_num_workers = sysconf(_SC_NPROCESSORS_ONLN) * 2;
     tdbg("dispatcher: number of cpus is " << m_num_workers << std::endl);
     // The first thread becomes the leader
-    for (int i = 0; i < m_num_workers; i++) {
+    for (uint8_t i = 0; i < m_num_workers; i++) {
         std::shared_ptr<worker> w = std::make_shared<worker>(i);
         assert(nullptr != w);
         m_workers.push_back(w);
-        // Do not add the first worker, as we make it the leader in run()
-        if (i > 0) {
-            m_worker_queue.push(i);
-        }
     }
     // Setup signal handlers
     ev_signal_init(&m_signal, handle_signal, SIGINT);
@@ -106,6 +104,7 @@ void dispatcher::run(int num, task* task, ...) {
     }
 
     // Start the event loop
+    m_workers_active.set(0);
     m_workers[0]->set_event_loop(std::move(loop));
 
     // Now we park this thread until someone calls finish()
@@ -121,23 +120,19 @@ void dispatcher::run(int num, task* task, ...) {
 
 std::shared_ptr<worker> dispatcher::free_worker() {
     if (m_num_workers > 1) {
-        std::lock_guard<std::mutex> lock(m_worker_mutex);
-        if (m_worker_queue.empty()) {
-            return nullptr;
+        tools::bitset::int_type id;
+        if (m_workers_active.first(id)) {
+            tdbg("dispatcher: free_worker(" << id << ")" << std::endl);
+            m_workers_active.set(id);
+            return m_workers[id];
         }
-        int id = m_worker_queue.front();
-        m_worker_queue.pop();
-        tdbg("dispatcher: free_worker(" << id << ")" << std::endl);
-        return m_workers[id];
-    } else {
-        return nullptr;
     }
+    return nullptr;
 }
 
-void dispatcher::add_free_worker(int id) {
-    std::lock_guard<std::mutex> lock(m_worker_mutex);
-    tdbg("dispatcher: add_free_worker(" << id << ")" << std::endl);        
-    m_worker_queue.push(id);
+void dispatcher::add_free_worker(uint8_t id) {
+    tdbg("dispatcher: add_free_worker(" << (unsigned int) id << ")" << std::endl);
+    m_workers_active.unset(id);
 }
 
 } // tasks
