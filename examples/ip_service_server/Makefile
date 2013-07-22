@@ -4,7 +4,7 @@ CC = $(CXX)
 DEBUG = 0
 PROFILER = 0
 
-CXXFLAGS = -O4 -ggdb -I../.. -I. -Igen-cpp -I/usr/include/thrift -std=c++11 -pthread
+CXXFLAGS = -O4 -ggdb -I../.. -I. -Igen-cpp -I/usr/include/thrift -I/usr/local/include/thrift -std=c++11 -pthread
 LDFLAGS = -L../../tasks -ltasks -lev -lthrift
 
 ifeq ($(DEBUG), 1)
