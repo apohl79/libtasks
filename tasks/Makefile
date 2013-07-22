@@ -10,6 +10,15 @@ ifeq ($(DEBUG), 1)
   CXXFLAGS += -DDEBUG -DLOGMUTEX
 endif
 
+OS := $(shell uname)
+ifeq ($(OS), Linux)
+  CACHE_LINE_SIZE := $(shell getconf LEVEL1_DCACHE_LINESIZE)
+endif
+ifeq ($(OS), Darwin)
+  CACHE_LINE_SIZE := $(shell sysctl -n hw.cachelinesize)
+endif
+CXXFLAGS += -DCACHE_LINE_SIZE=$(CACHE_LINE_SIZE)
+
 SRC = $(wildcard *.cpp) $(wildcard net/*.cpp tools/*.cpp)
 OBJ = $(patsubst %.cpp,%.o,$(SRC))
 
