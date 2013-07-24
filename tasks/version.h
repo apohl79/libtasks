@@ -20,8 +20,6 @@
 #ifndef _TASKS_VERSION_H_
 #define _TASKS_VERSION_H_
 
-#include <string>
-
 namespace tasks {
 
 static const char* libtasks_version = "1.0";
