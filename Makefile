@@ -1,12 +1,13 @@
 LIB = tasks/libtasks.a
 EXAMPLES = examples
+VERSION := $(shell cat VERSION)
 
 all: $(LIB) $(EXAMPLES)
 
 $(EXAMPLES): $(LIB)
 
 $(LIB):
-	cd tasks && $(MAKE) $(MAKE_ARGS)
+	cd tasks && $(MAKE) $(MAKE_ARGS) VERSION=$(VERSION)
 
 $(EXAMPLES):
 	for e in examples/*; do \

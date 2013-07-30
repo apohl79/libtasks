@@ -22,10 +22,12 @@
 
 namespace tasks {
 
-static const char* libtasks_version = "1.0";
+struct version_helper {
+    static const char* version;
+};
 
 static const char* version() {
-    return libtasks_version;
+    return version_helper::version;
 }
 
 }

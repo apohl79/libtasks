@@ -3,7 +3,7 @@ CXX = g++-4.8
 CC = $(CXX)
 DEBUG = 0
 
-CXXFLAGS = -O4 -ggdb -I.. -std=c++11 -pthread
+CXXFLAGS = -O4 -ggdb -I.. -std=c++11 -pthread -DTASKS_VERSION=\"$(VERSION)\"
 LDFLAGS = -lev
 
 ifeq ($(DEBUG), 1)
