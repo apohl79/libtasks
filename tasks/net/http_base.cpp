@@ -21,6 +21,7 @@
 #include <tasks/logging.h>
 
 #include <tasks/net/http_base.h>
+#include <tasks/net/socket.h>
 
 namespace tasks {
 namespace net {

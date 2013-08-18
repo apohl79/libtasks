@@ -24,17 +24,12 @@
 #include <cassert>
 #include <cstring>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <unistd.h>
-
 #include <tasks/dispatcher.h>
 #include <tasks/logging.h>
 #include <tasks/io_task.h>
 #include <tasks/net/http_request.h>
 #include <tasks/net/http_response.h>
+#include <tasks/net/socket.h>
 
 namespace tasks {
 namespace net {
@@ -91,31 +86,18 @@ public:
             m_host = host;
             // Close an existing connection
             if (-1 != fd()) {
-                close(fd());
+                socket(fd()).close();
             }
             // Connect
-            tdbg("http_sender: Resolving " << m_host << std::endl);
-            struct hostent* remote = gethostbyname(m_host.c_str());
-            if (nullptr == remote) {
-                terr("http_sender: Host " << m_host << " not found" << std::endl);
-                return false;
-            }
-            int fd = socket(PF_INET, SOCK_STREAM, 0);
-            assert(fd > 0);
-            struct sockaddr_in addr = {0};
-            addr.sin_family = AF_INET;
-            std::memcpy(&addr.sin_addr, remote->h_addr_list[0], remote->h_length);
-            addr.sin_port = htons(m_port);
             tdbg("http_sender: Connecting " << m_host << ":" << m_port << std::endl);
-            if (connect(fd, (struct sockaddr *) &addr, sizeof(addr))) {
-                terr("http_sender: Connection to " << m_host << ":" << m_port << " failed"
-                     << std::endl);
+            socket sock;
+            try {
+                sock.connect(m_host, m_port);
+                set_fd(sock.fd());
+            } catch (socket_exception e) {
+                terr("http_sender: " << e.what() << std::endl);
                 return false;
             }
-            assert(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK) == 0);
-            tdbg("http_sender: Connection to " << m_host << ":" << m_port << " successful"
-                 << std::endl);
-            set_fd(fd);
         }
         m_request->set_header("Host", m_host);
         set_events(EV_WRITE);

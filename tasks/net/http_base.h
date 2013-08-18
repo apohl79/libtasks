@@ -34,12 +34,6 @@
 #define CRLF "\r\n"
 #define CRLF_SIZE 2
 
-#ifdef __linux__
-#define SENDTO_FLAGS MSG_NOSIGNAL
-#else
-#define SENDTO_FLAGS 0
-#endif
-
 namespace tasks {
 namespace net {
 

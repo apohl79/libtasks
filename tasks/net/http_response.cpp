@@ -25,6 +25,7 @@
 
 #include <tasks/logging.h>
 #include <tasks/net/http_response.h>
+#include <tasks/net/socket.h>
 #include <tasks/tools/itostr.h>
 
 namespace tasks {
@@ -51,43 +52,40 @@ void http_response::prepare_data_buffer() {
 
 // We are reading things into the content buffer only.
 bool http_response::read_data(int fd) {
+    socket sock(fd);
     bool success = true;
     if (READY == m_state) {
         m_content_buffer.set_size(READ_BUFFER_SIZE_BLOCK);
         m_state = READ_DATA;
     }
     if (DONE != m_state) {
-        ssize_t towrite = 0, bytes = 0;
+        std::size_t towrite = 0, bytes = 0;
         do {
             towrite = m_content_buffer.to_write() - 1;
             if (towrite < READ_BUFFER_SIZE_BLOCK - 1) {
                 m_content_buffer.set_size(m_content_buffer.buffer_size() + READ_BUFFER_SIZE_BLOCK);
                 towrite = m_content_buffer.to_write() - 1;
             }
-            bytes = recvfrom(fd, m_content_buffer.ptr_write(), towrite, RECVFROM_FLAGS, nullptr, nullptr);
-            if (bytes < 0) {
-                if (errno != EAGAIN) {
-                    terr("http_response: error reading from client file descriptor " << fd << ", errno "
-                         << errno << std::endl);
-                    success = false;
+            try {
+                bytes = sock.read(m_content_buffer.ptr_write(), towrite);
+                if (bytes > 0) {
+                    m_content_buffer.move_ptr_write(bytes);
+                    if (READ_DATA == m_state) {
+                        // Terminate the string for parsing
+                        *(m_content_buffer.ptr_write()) = 0;
+                        success = parse_data();
+                    }
+                    tdbg("http_response: read data successfully, " << bytes << " bytes" << std::endl);
+                    if (m_content_length == m_content_buffer.offset_write() - m_content_start) {
+                        *(m_content_buffer.ptr_write()) = 0;
+                        m_content_buffer.set_size(m_content_start + m_content_length);
+                        m_content_buffer.move_ptr_read_abs(m_content_start);
+                        m_state = DONE;
+                    }
                 }
-            } else if (bytes == 0) {
-                tdbg("http_response: client " << fd << " disconnected" << std::endl);
+            } catch (socket_exception e) {
+                terr("http_response: " << e.what() << std::endl);
                 success = false;
-            } else if (bytes > 0) {
-                m_content_buffer.move_ptr_write(bytes);
-                if (READ_DATA == m_state) {
-                    // Terminate the string for parsing
-                    *(m_content_buffer.ptr_write()) = 0;
-                    success = parse_data();
-                }
-                tdbg("http_response: read data successfully, " << bytes << " bytes" << std::endl);
-                if (m_content_length == m_content_buffer.offset_write() - m_content_start) {
-                    *(m_content_buffer.ptr_write()) = 0;
-                    m_content_buffer.set_size(m_content_start + m_content_length);
-                    m_content_buffer.move_ptr_read_abs(m_content_start);
-                    m_state = DONE;
-                }
             }
         } while (towrite == bytes);
     }

@@ -18,12 +18,12 @@
  */
 
 #include <vector>
-#include <sys/socket.h>
 
 #include <tasks/dispatcher.h>
 #include <tasks/logging.h>
 #include <tasks/ev_wrapper.h>
 #include <tasks/net/acceptor.h>
+#include <tasks/net/socket.h>
 
 #include <echoserver.h>
 
@@ -31,45 +31,45 @@
 #include <google/profiler.h>
 #endif
 
+using namespace tasks;
+using namespace tasks::net;
+
 std::atomic<int> stats::m_req_count;
 std::atomic<int> stats::m_clients;
 
 bool echo_handler::handle_event(tasks::worker* worker, int events) {
+    socket sock(fd());
 	if (events & EV_READ) {
-		std::vector<char> buf(1024);
-		ssize_t bytes = recvfrom(fd(), &buf[0], buf.size(), 0, nullptr, nullptr);
-		if (bytes < 0 && errno != EAGAIN) {
-			terr("echo_handler: error reading from client file descriptor " << fd() << ", errno "
-				<< errno << std::endl);
-			return false;
-		} else if (bytes == 0) {
-			std::cout << "echo_handler: client " << fd() << " disconnected" << std::endl;
-			return false;
-		} else if (bytes > 0) {
-			tdbg("echo_handler: read " << bytes << " bytes" << std::endl);
+        try {
+            std::vector<char> buf(1024);
+            std::size_t bytes = sock.read(&buf[0], buf.size());
+            tdbg("echo_handler: read " << bytes << " bytes" << std::endl);
 			buf.resize(bytes);
 			m_write_queue.push(std::move(buf));
-		}
+        } catch (socket_exception e) {
+            terr("echo_handler::handle_event: " << e.what() << std::endl);
+            return false;
+        }
 	}
 	if (events & EV_WRITE) {
 		if (!m_write_queue.empty()) {
 			std::vector<char>& buf = m_write_queue.front();
-			ssize_t bytes = sendto(fd(), &buf[m_write_offset], buf.size() - m_write_offset,
-								   0, nullptr, 0);
-			if (bytes < 0 && errno != EAGAIN) {
-				terr("echo_handler: error writing to client file descriptor " << fd() << ", errno "
-					 << errno << std::endl);
-				return false;
-			} else if (bytes > 0) {
+            try {
+                std::size_t len = buf.size() - m_write_offset;
+                std::size_t bytes = sock.write(&buf[m_write_offset], len);
 				tdbg("echo_handler: wrote " << bytes << " bytes" << std::endl);
-				if (bytes == (buf.size() - m_write_offset)) {
-					// buffer send completely
+                if (bytes == len) {
+                    // buffer send completely
 					m_write_queue.pop();
+                    m_write_offset = 0;
 					stats::inc_req();
-				} else {
-					m_write_offset += bytes;
-				}
-			}
+                } else {
+                    m_write_offset += bytes;
+                }
+            } catch (socket_exception e) {
+                terr("echo_handler::handle_event: " << e.what() << std::endl);
+                return false;
+            }
 		}
 	}
 	if (m_write_queue.empty()) {
@@ -98,8 +98,8 @@ int main(int argc, char** argv) {
 	ProfilerStart("echoserver.prof");
 #endif
 	stats s;
-	tasks::net::acceptor<echo_handler> srv(12345);
-	tasks::dispatcher::instance()->run(2, &srv, &s);
+	acceptor<echo_handler> srv(12345);
+	dispatcher::instance()->run(2, &srv, &s);
 #ifdef PROFILER
 	ProfilerStop();
 #endif
