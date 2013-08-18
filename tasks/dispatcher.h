@@ -59,13 +59,18 @@ public:
         return m_workers[0].get();
     }
         
-    // This method starts the system and blocks until finish() gets called.
-    // At least one task has to be passed.
-    void run(int num, task* task, ...);
+    // This method starts the system and blocks until terminate() gets called.
+    void run(int num, ...);
 
+    // Start the event loop. Do not block.
+    void start();
+    
+    // Wait for the dispatcher to finish
+    void join();
+    
     // Terminate the workers and die.
     inline void terminate() {
-        m_term.store(true);
+        m_term = true;
         m_finish_cond.notify_one();
     }
     

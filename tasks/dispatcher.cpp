@@ -41,8 +41,7 @@ static void handle_signal(struct ev_loop* loop, ev_signal* sig, int revents) {
 dispatcher::dispatcher()
     : m_term(false),
       m_num_workers(sysconf(_SC_NPROCESSORS_ONLN) * 2),
-      m_workers_active(tools::bitset(m_num_workers)) {
-    
+      m_workers_active(tools::bitset(m_num_workers)) {    
     // Initialize the event loop structure
     ev_default_loop(0);
     // Create workers 
@@ -80,23 +79,14 @@ bool dispatcher::start_timer_task(task* task) {
     return success;
 }
 
-void dispatcher::run(int num, task* task, ...) {
-    // Create an event loop and pass it to a worker
-    std::unique_ptr<loop_wrapper> loop(new loop_wrapper);
-    loop->loop = ev_default_loop(0);
-        
-    // Try to find a proper task specialization and start a watcher
-    bool task_found = false;
-    task_found = start_io_task(task);
-    if (!task_found) task_found = start_timer_task(task);
-    assert(task_found);
-
-    // Start more tasks if passed
-    if (num > 1) {
+void dispatcher::run(int num, ...) {
+    // Start tasks if passed
+    if (num > 0) {
         va_list tasks;
-        va_start(tasks, task);
-        for (int i = 1; i < num; i++) {
+        va_start(tasks, num);
+        for (int i = 0; i < num; i++) {
             tasks::task* t = va_arg(tasks, tasks::task*);
+            // Try to find a proper task specialization and start a watcher
             bool started = start_io_task(t);
             if (!started) started = start_timer_task(t);
         }
@@ -104,10 +94,21 @@ void dispatcher::run(int num, task* task, ...) {
     }
 
     // Start the event loop
+    start();
+    
+    // Now we park this thread until someone calls finish()
+    join();
+}
+
+void dispatcher::start() {
+    // Create an event loop and pass it to a worker
+    std::unique_ptr<loop_wrapper> loop(new loop_wrapper);
+    loop->loop = ev_default_loop(0);
     m_workers_active.set(0);
     m_workers[0]->set_event_loop(std::move(loop));
+}
 
-    // Now we park this thread until someone calls finish()
+void dispatcher::join() {
     std::unique_lock<std::mutex> lock(m_finish_mutex);
     while (!m_term &&
            m_finish_cond.wait_for(lock, std::chrono::milliseconds(1000)) == std::cv_status::timeout) {}
