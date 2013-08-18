@@ -74,6 +74,8 @@ int main(int argc, char** argv) {
         disp->run(1, sender);
     } else {
         delete sender;
+        disp->terminate();
+        disp->join();
     }
     return 0;
 }
