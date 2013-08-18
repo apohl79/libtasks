@@ -30,12 +30,6 @@
 #include <tasks/net/io_state.h>
 #include <tasks/tools/buffer.h>
 
-#ifdef __linux__
-#define RECVFROM_FLAGS MSG_DONTWAIT
-#else
-#define RECVFROM_FLAGS 0
-#endif
-
 namespace tasks {
 namespace net {
         
@@ -105,7 +99,9 @@ private:
     std::unordered_map<std::string, std::string> m_vars;
 
     bool read_header(int fd);
-    bool read_vars();
+    bool read_vars(int fd);
+    bool read_content(int fd);
+    bool parse_vars();
 };
 
 } // net
