@@ -24,6 +24,7 @@
 #include <tasks/tools/thrift_server_writer.h>
 
 #include <iostream>
+#include <arpa/inet.h>
 #include <protocol/TBinaryProtocol.h>
 
 #ifdef PROFILER
