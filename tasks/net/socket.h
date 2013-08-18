@@ -70,8 +70,8 @@ public:
     void shutdown();
     void close();
     
-    std::size_t write(const char *data, std::size_t len) throw(socket_exception);
-    std::size_t read(char *data, std::size_t len) throw(socket_exception);
+    std::size_t write(const char* data, std::size_t len) throw(socket_exception);
+    std::size_t read(char* data, std::size_t len) throw(socket_exception);
 
 private:
     int m_fd = -1;

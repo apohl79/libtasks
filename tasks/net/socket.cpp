@@ -133,7 +133,7 @@ void socket::shutdown() {
     ::shutdown(m_fd, SHUT_RDWR);
 }
 
-std::size_t socket::write(const char *data, std::size_t len) throw(socket_exception) {
+std::size_t socket::write(const char* data, std::size_t len) throw(socket_exception) {
     ssize_t bytes = sendto(m_fd, data, len, SENDTO_FLAGS, nullptr, 0);
     if (bytes < 0 && errno != EAGAIN) {
         std::stringstream s;
@@ -143,7 +143,7 @@ std::size_t socket::write(const char *data, std::size_t len) throw(socket_except
     return bytes;
 }
 
-std::size_t socket::read(char *data, std::size_t len) throw(socket_exception) {
+std::size_t socket::read(char* data, std::size_t len) throw(socket_exception) {
 	ssize_t bytes = recvfrom(m_fd, data, len, RECVFROM_FLAGS, nullptr, nullptr);
 	if (bytes < 0 && errno != EAGAIN) {
         std::stringstream s;
