@@ -82,8 +82,10 @@ public:
     inline bool send(std::shared_ptr<http_request> request) {
         m_request = request;
         const std::string& host = m_request->header("Host");
+        int port = m_request->port();
         if (-1 == fd() || m_host != host) {
             m_host = host;
+            m_port = m_request->port();
             // Close an existing connection
             if (-1 != fd()) {
                 socket(fd()).close();
