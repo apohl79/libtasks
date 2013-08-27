@@ -41,15 +41,15 @@ class task;
 // Needed to use std::unique_ptr<>
 class loop_wrapper {
 public:
-	struct ev_loop *loop;
+    struct ev_loop *loop;
 };
 
 // Signals to enter the leader thread context
 typedef std::function<void(struct ev_loop*)> task_func;
 
 struct task_func_queue {
-	std::queue<task_func> queue;
-	std::mutex mutex;
+    std::queue<task_func> queue;
+    std::mutex mutex;
 };
 
 // Put all queued events into a queue instead of handling them
@@ -57,111 +57,115 @@ struct task_func_queue {
 // we want to promote the next leader after the ev_loop call
 // returns to avoid calling it from multiple threads.
 struct event {
-	tasks::task* task;
-	int revents;
+    tasks::task* task;
+    int revents;
 };
-		
+        
 class worker {
 public:
-	worker(uint8_t id);
-	virtual ~worker();
+    worker(uint8_t id);
+    virtual ~worker();
 
-	inline uint8_t id() const {
-		return m_id;
-	}
+    inline uint8_t id() const {
+        return m_id;
+    }
 
-	inline std::string get_string() const {
-		std::ostringstream os;
-		os << "worker(" << (unsigned int) m_id << ")";
-		return os.str();
-	}
+    inline std::string get_string() const {
+        std::ostringstream os;
+        os << "worker(" << (unsigned int) m_id << ")";
+        return os.str();
+    }
 
-	// Executes task_func directly if called in leader thread
-	// context or delegates it. Returns true when task_func has
-	// been executed.
-	inline bool signal_call(task_func f) {
-		if (m_leader) {
-			// The worker is the leader, now execute the functor
-			f(m_loop->loop);
-			return true;
-		} else {
-			task_func_queue* tfq = (task_func_queue*) m_signal_watcher.data;
-			std::lock_guard<std::mutex> lock(tfq->mutex);
-			tfq->queue.push(f);
-			ev_async_send(ev_default_loop(0), &m_signal_watcher);
-			return false;
-		}
-	}
+    // Executes task_func directly if called in leader thread
+    // context or delegates it. Returns true when task_func has
+    // been executed.
+    inline bool signal_call(task_func f) {
+        if (m_leader) {
+            // The worker is the leader, now execute the functor
+            f(m_loop->loop);
+            return true;
+        } else {
+            async_call(f);
+            return false;
+        }
+    }
 
-	inline void set_event_loop(std::unique_ptr<loop_wrapper> loop) {
-		m_loop = std::move(loop);
- 		m_leader = true;
-		ev_set_userdata(m_loop->loop, this);
-		m_work_cond.notify_one();
-	}
+    inline void async_call(task_func f) {
+        task_func_queue* tfq = (task_func_queue*) m_signal_watcher.data;
+        std::lock_guard<std::mutex> lock(tfq->mutex);
+        tfq->queue.push(f);
+        ev_async_send(ev_default_loop(0), &m_signal_watcher);
+    }
 
-	inline void terminate() {
+    inline void set_event_loop(std::unique_ptr<loop_wrapper> loop) {
+        m_loop = std::move(loop);
+         m_leader = true;
+        ev_set_userdata(m_loop->loop, this);
+        m_work_cond.notify_one();
+    }
+
+    inline void terminate() {
         tdbg(get_string() << ": waiting to terminate thread" << std::endl);
-		m_term = true;
-		m_work_cond.notify_one();
+        m_term = true;
+        m_work_cond.notify_one();
         if (m_leader) {
             // interrupt the event loop
             ev_async_send(ev_default_loop(0), &m_signal_watcher);
         }
         m_thread.join();
         tdbg(get_string() << ": thread done" << std::endl);
-	}
+    }
 
-	inline void add_event(event e) {
-		m_events_queue.push(e);
-	}
-		
-	void handle_io_event(ev_io* watcher, int revents);
-	void handle_timer_event(ev_timer* watcher);
-		
+    inline void add_event(event e) {
+        m_events_queue.push(e);
+    }
+        
+    void handle_io_event(ev_io* watcher, int revents);
+    void handle_timer_event(ev_timer* watcher);
+        
 private:
-	uint8_t m_id;
-	std::thread m_thread;
-	std::unique_ptr<loop_wrapper> m_loop;
-	std::atomic<bool> m_leader;
-	std::atomic<bool> m_term;
-	std::mutex m_work_mutex;
-	std::condition_variable m_work_cond;
-	std::queue<event> m_events_queue;
+    uint8_t m_id;
+    std::thread m_thread;
+    std::unique_ptr<loop_wrapper> m_loop;
+    std::atomic<bool> m_leader;
+    std::atomic<bool> m_term;
+    std::mutex m_work_mutex;
+    std::condition_variable m_work_cond;
+    std::queue<event> m_events_queue;
 
-	// Every worker has an async watcher to be able to call
-	// into the leader thread context.
-	ev_async m_signal_watcher;
+    // Every worker has an async watcher to be able to call
+    // into the leader thread context.
+    ev_async m_signal_watcher;
 
-	inline void promote_leader() {
-		std::shared_ptr<worker> w = dispatcher::instance()->free_worker();
-		if (nullptr != w) {
-			// If we find a free worker, we promote it to the next
-			// leader. This thread stays leader otherwise.
-			m_leader = false;
-			w->set_event_loop(std::move(m_loop));
-		}
-	}
+    inline void promote_leader() {
+        std::shared_ptr<worker> w = dispatcher::instance()->free_worker();
+        if (nullptr != w) {
+            // If we find a free worker, we promote it to the next
+            // leader. This thread stays leader otherwise.
+            m_leader = false;
+            w->set_event_loop(std::move(m_loop));
+        }
+    }
 
-	void run();
+    void run();
 };
-	
+    
 /* CALLBACKS */
 template<typename EV_t>
 static void tasks_event_callback(struct ev_loop* loop, EV_t w, int e) {
-	worker* worker = (tasks::worker*) ev_userdata(loop);
-	assert(nullptr != worker);
-	task* task = (tasks::task*) w->data;
-	task->stop_watcher(worker);
-	event event = {task, e};
-	worker->add_event(event);
+    worker* worker = (tasks::worker*) ev_userdata(loop);
+    assert(nullptr != worker);
+    task* task = (tasks::task*) w->data;
+    task->stop_watcher(worker);
+    event event = {task, e};
+    worker->add_event(event);
 }
 
 static void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events) {
-	worker* worker = (tasks::worker*) ev_userdata(loop);
-	assert(nullptr != worker);
-	task_func_queue* tfq = (tasks::task_func_queue*) w->data;
-	if (nullptr != tfq) {
+    worker* worker = (tasks::worker*) ev_userdata(loop);
+    assert(nullptr != worker);
+    task_func_queue* tfq = (tasks::task_func_queue*) w->data;
+    if (nullptr != tfq) {
         std::lock_guard<std::mutex> lock(tfq->mutex);
         // Execute all queued functors
         while (!tfq->queue.empty()) {
