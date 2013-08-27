@@ -108,10 +108,10 @@ public:
     bool read_data(int fd);
 
     inline void print() const {
-        std::cout << std::string(m_data_buffer.ptr(0), m_data_buffer.size());
-        if (m_content_buffer.size()) {
-            std::cout << std::string(m_content_buffer.ptr(0), m_content_buffer.size());
+        for (auto &kv : m_headers) {
+            std::cout << kv.first << ": " << kv.second << std::endl;
         }
+        std::cout << content_p();
     }
 
     inline bool done() const {
