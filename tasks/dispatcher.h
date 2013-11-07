@@ -25,6 +25,7 @@
 #include <mutex>
 #include <memory>
 #include <atomic>
+#include <unistd.h>
 
 #include <tasks/ev_wrapper.h>
 #include <tasks/tools/bitset.h>
@@ -38,11 +39,21 @@ struct signal_data;
     
 class dispatcher {
 public:
-    dispatcher();
+    dispatcher(uint8_t num_workers);
+
+    // Use this method to override the number of worker threads. The default is the
+    // number of CPU's. This method needs to be called before the first call to
+    // instance().
+    static void init_workers(uint8_t num_workers) {
+        if (nullptr == m_instance) {
+            m_instance = std::make_shared<dispatcher>(num_workers);
+        }
+    }
 
     static std::shared_ptr<dispatcher> instance() {
         if (nullptr == m_instance) {
-            m_instance = std::make_shared<dispatcher>();
+            // Create as many workers as we have CPU's per default
+            m_instance = std::make_shared<dispatcher>(sysconf(_SC_NPROCESSORS_ONLN));
         }
         return m_instance;
     }
@@ -73,6 +84,8 @@ public:
         m_term = true;
         m_finish_cond.notify_one();
     }
+
+    void print_worker_stats() const;
     
 private:
     static std::shared_ptr<dispatcher> m_instance;
@@ -82,7 +95,7 @@ private:
     uint8_t m_num_workers = 0;
 
     // State of the workers
-    tools::bitset m_workers_active;
+    tools::bitset m_workers_busy;
 
     // Condition variable/mutex used to wait for finishing up 
     std::condition_variable m_finish_cond;

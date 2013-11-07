@@ -122,9 +122,14 @@ public:
         
     void handle_io_event(ev_io* watcher, int revents);
     void handle_timer_event(ev_timer* watcher);
+
+    inline uint64_t events_count() const {
+        return m_events_count;
+    }
         
 private:
     uint8_t m_id;
+    uint64_t m_events_count = 0;
     std::thread m_thread;
     std::unique_ptr<loop_wrapper> m_loop;
     std::atomic<bool> m_leader;

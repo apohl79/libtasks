@@ -26,7 +26,6 @@
 #include <cassert>
 #include <cstdarg>
 #include <chrono>
-#include <unistd.h>
 
 namespace tasks {
 
@@ -38,19 +37,20 @@ static void handle_signal(struct ev_loop* loop, ev_signal* sig, int revents) {
     d->terminate();
 }
 
-dispatcher::dispatcher()
+dispatcher::dispatcher(uint8_t num_workers)
     : m_term(false),
-      m_num_workers(sysconf(_SC_NPROCESSORS_ONLN) * 2),
-      m_workers_active(tools::bitset(m_num_workers)) {    
+      m_num_workers(num_workers),
+      m_workers_busy(tools::bitset(m_num_workers)) {
     // Initialize the event loop structure
     ev_default_loop(0);
     // Create workers 
-    tdbg("dispatcher: number of cpus is " << m_num_workers << std::endl);
+    tdbg("dispatcher: number of cpus is " << (int) m_num_workers << std::endl);
     // The first thread becomes the leader
     for (uint8_t i = 0; i < m_num_workers; i++) {
         std::shared_ptr<worker> w = std::make_shared<worker>(i);
         assert(nullptr != w);
         m_workers.push_back(w);
+        m_workers_busy.set(i);
     }
     // Setup signal handlers
     ev_signal_init(&m_signal, handle_signal, SIGINT);
@@ -104,7 +104,7 @@ void dispatcher::start() {
     // Create an event loop and pass it to a worker
     std::unique_ptr<loop_wrapper> loop(new loop_wrapper);
     loop->loop = ev_default_loop(0);
-    m_workers_active.set(0);
+    m_workers_busy.unset(0);
     m_workers[0]->set_event_loop(std::move(loop));
 }
 
@@ -122,9 +122,9 @@ void dispatcher::join() {
 std::shared_ptr<worker> dispatcher::free_worker() {
     if (m_num_workers > 1) {
         tools::bitset::int_type id;
-        if (m_workers_active.first(id)) {
+        if (m_workers_busy.first(id)) {
             tdbg("dispatcher: free_worker(" << id << ")" << std::endl);
-            m_workers_active.set(id);
+            m_workers_busy.unset(id);
             return m_workers[id];
         }
     }
@@ -133,7 +133,14 @@ std::shared_ptr<worker> dispatcher::free_worker() {
 
 void dispatcher::add_free_worker(uint8_t id) {
     tdbg("dispatcher: add_free_worker(" << (unsigned int) id << ")" << std::endl);
-    m_workers_active.unset(id);
+    m_workers_busy.set(id);
 }
+
+void dispatcher::print_worker_stats() const {
+    for (auto &w: m_workers) {
+        terr(w->get_string() << ": number of handled events is " << w->events_count() << std::endl);
+    }
+}
+
 
 } // tasks

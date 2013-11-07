@@ -64,6 +64,7 @@ void worker::run() {
                 promote_leader();
                 // Handle events
                 while (!m_events_queue.empty()) {
+                    m_events_count++;
                     event event = m_events_queue.front();
                     if (event.task->handle_event(this, event.revents)) {
                         // We activate the watcher again as true
