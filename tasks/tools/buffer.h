@@ -25,6 +25,8 @@
 #include <cassert>
 #include <streambuf>
 
+#include <tasks/logging.h>
+
 namespace tasks {
 namespace tools {
 
@@ -34,12 +36,12 @@ public:
         setg(ptr_begin(), ptr_begin(), ptr_end());
         setp(ptr_begin(), ptr_end());
     }
+
+    buffer(std::size_t size) : buffer() {
+        set_size(size);
+    }
     
     inline char* ptr_write() {
-        return pptr();
-    }
-
-    inline const char* ptr_write() const {
         return pptr();
     }
 
@@ -141,7 +143,16 @@ public:
     inline std::streamsize read(char_type* data, std::streamsize size) {
         return xsgetn(data, size);
     }
-        
+
+    int_type sputc(char_type c) {
+        set_size(m_size + 1);
+        return std::streambuf::sputc(c);
+    }
+
+    int_type overflow(int_type ch) {
+        return sputc(traits_type::to_char_type(ch));
+    }
+
     inline void clear() {
         m_size = 0;
         setg(ptr_begin(), ptr_begin(), ptr_end());
