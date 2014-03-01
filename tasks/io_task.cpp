@@ -96,7 +96,7 @@ void io_task::update_watcher(worker* worker) {
     }
 }
 
-void io_task::add_io_task(worker* worker, io_task* task) {
+void io_task::add_task(worker* worker, io_task* task) {
     worker->signal_call([task] (struct ev_loop* loop) {
             tdbg(task->get_string() << ": adding io_task" << std::endl);
             task->init_watcher();
@@ -104,7 +104,7 @@ void io_task::add_io_task(worker* worker, io_task* task) {
         });
 }
 
-void io_task::add_io_task(io_task* task) {
+void io_task::add_task(io_task* task) {
     dispatcher::instance()->first_worker()->async_call([task] (struct ev_loop* loop) {
             tdbg(task->get_string() << ": adding io_task" << std::endl);
             task->init_watcher();

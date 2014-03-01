@@ -66,12 +66,12 @@ public:
     // context. If io tasks should be created within the context of a worker thread,
     // you should use the protected non static method and pass a worker thread
     // pointer.
-    static void add_io_task(io_task* task);
+    static void add_task(io_task* task);
 
 protected:
     void set_fd(int fd);
     void set_events(int events);
-    void add_io_task(worker* worker, io_task* task);
+    void add_task(worker* worker, io_task* task);
 
 private:
     std::unique_ptr<ev_io> m_io;
