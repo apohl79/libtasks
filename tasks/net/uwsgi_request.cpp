@@ -103,7 +103,7 @@ bool uwsgi_request::read_data(int fd) {
     bool success = true;
     if (READY == m_state) {
         m_state = READ_HEADER;
-        if (success = read_header(fd)) {
+        if ((success = read_header(fd))) {
             m_state = READ_DATA;
             m_data_buffer.set_size(m_header.datasize);
         }
