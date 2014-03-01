@@ -59,7 +59,7 @@ public:
             socket client = sock.accept();
             tdbg("acceptor: new client fd " << client.fd() << std::endl);
             T* task = new T(client.fd());
-            add_io_task(worker, task);
+            add_task(worker, task);
         } catch (socket_exception e) {
             terr("acceptor: " << e.what() << std::endl);
             assert(false);
