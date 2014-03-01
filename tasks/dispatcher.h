@@ -57,6 +57,17 @@ public:
         }
         return m_instance;
     }
+
+    static void destroy() {
+        if (nullptr != m_instance) {
+            if (!m_instance->m_term) {
+                m_instance->terminate();
+                m_instance->join();
+            }
+            m_instance.reset();
+            m_instance = nullptr;
+        }
+    }
         
     // Get a free worker to promote it to the leader.
     std::shared_ptr<worker> free_worker();
