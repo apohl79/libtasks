@@ -99,7 +99,7 @@ public:
 
     inline void set_event_loop(std::unique_ptr<loop_wrapper> loop) {
         m_loop = std::move(loop);
-         m_leader = true;
+        m_leader = true;
         ev_set_userdata(m_loop->loop, this);
         m_work_cond.notify_one();
     }
@@ -119,7 +119,15 @@ public:
     inline void add_event(event e) {
         m_events_queue.push(e);
     }
-        
+
+    static void add_async_event(event e) {
+        dispatcher::instance()->first_worker()->async_call([e] (struct ev_loop* loop) {
+                // get the executing worker
+                worker* worker = (tasks::worker*) ev_userdata(loop);
+                worker->add_event(e);
+            });
+    }
+
     void handle_io_event(ev_io* watcher, int revents);
     void handle_timer_event(ev_timer* watcher);
 
