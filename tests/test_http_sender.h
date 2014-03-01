@@ -20,8 +20,8 @@ class test_http_sender : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE_END();
     
 public:
-    void setUp();
-    void tearDown();
+    void setUp() {}
+    void tearDown() {}
 
 protected:
     void requests();

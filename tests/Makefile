@@ -1,9 +1,14 @@
 TARGET = libtasks_tests
 CXX = g++-4.8
 CC = $(CXX)
+DEBUG = 0
 
-CXXFLAGS = -ggdb -I../.. -I.. -I. -I/usr/include/thrift -std=c++11 -pthread
+CXXFLAGS = -ggdb -I../.. -I.. -I. -I/usr/include/thrift -std=c++11 -pthread 
 LDFLAGS = -L../../tasks -L../tasks -ltasks -lev -lcppunit
+
+ifeq ($(DEBUG), 1)
+  CXXFLAGS += -DDEBUG -DLOGMUTEX
+endif
 
 SRC = $(wildcard *.cpp) $(wildcard gen-cpp/*.cpp)
 OBJ = $(patsubst %.cpp,%.o,$(SRC))

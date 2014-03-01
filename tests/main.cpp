@@ -11,10 +11,16 @@
 #include <cppunit/XmlOutputter.h>
 
 #include "test_http_sender.h"
+#include "test_disk_io_task.h"
+
+#include <tasks/dispatcher.h>
 
 CPPUNIT_TEST_SUITE_REGISTRATION(test_http_sender);
+CPPUNIT_TEST_SUITE_REGISTRATION(test_disk_io_task);
 
 int main(int argc, char** argv) {
+    tasks::dispatcher::instance()->start();
+
     // informs test-listener about testresults
     CPPUNIT_NS::TestResult testresult;
 
@@ -39,7 +45,9 @@ int main(int argc, char** argv) {
     std::ofstream xmlFileOut("libtasks_results.xml");
     CPPUNIT_NS::XmlOutputter xmlOut(&collectedresults, xmlFileOut);
     xmlOut.write();
- 
+
+    tasks::dispatcher::destroy();
+
     // return 0 if tests were successful
     return collectedresults.wasSuccessful() ? 0 : 1;
 }
