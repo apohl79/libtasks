@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Andreas Pohl <apohl79 at gmail.com>
+ * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
  * 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Andreas Pohl <apohl79 at gmail.com>
+ * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
  * 
@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
 #endif
     stats s;
     acceptor<echo_handler> srv(12345);
-    dispatcher::init_workers(1);
+    //dispatcher::init_workers(1);
     dispatcher::instance()->run(2, &srv, &s);
 #ifdef PROFILER
     ProfilerStop();

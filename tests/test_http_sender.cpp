@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Andreas Pohl <apohl79 at gmail.com>
+ * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
  * 
@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 #include "test_http_sender.h"
 

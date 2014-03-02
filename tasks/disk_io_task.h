@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Andreas Pohl <apohl79 at gmail.com>
+ * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
  * 
@@ -50,7 +50,7 @@ public:
         return m_bytes;
     }
 
-	virtual bool handle_event(worker* worker, int events);
+    virtual bool handle_event(worker* worker, int events);
     virtual void start_watcher(worker* worker) {}
     virtual void stop_watcher(worker* worker) {}
 
