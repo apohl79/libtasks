@@ -25,7 +25,7 @@
 #include <string>
 #include <cassert>
 
-#include <tasks/io_task.h>
+#include <tasks/net_io_task.h>
 #include <tasks/net/uwsgi_request.h>
 #include <tasks/net/http_response.h>
 
@@ -37,9 +37,9 @@
 namespace tasks {
 namespace net {
 
-class uwsgi_task : public tasks::io_task {
+class uwsgi_task : public tasks::net_io_task {
 public:
-    uwsgi_task(int socket) : tasks::io_task(socket, EV_READ) {}
+    uwsgi_task(int socket) : tasks::net_io_task(socket, EV_READ) {}
     virtual ~uwsgi_task() {}
 
     bool handle_event(tasks::worker* worker, int revents);

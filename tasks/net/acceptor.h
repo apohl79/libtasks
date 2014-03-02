@@ -23,7 +23,7 @@
 #include <cassert>
 #include <vector>
 
-#include <tasks/io_task.h>
+#include <tasks/net_io_task.h>
 #include <tasks/dispatcher.h>
 #include <tasks/logging.h>
 #include <tasks/net/socket.h>
@@ -34,9 +34,9 @@ namespace net {
 // Takes a handler class as argument that needs to take the client socket in its constructor.
 // See echo_server example.
 template<class T>
-class acceptor : public io_task {
+class acceptor : public net_io_task {
 public:
-    acceptor(int port) : io_task(-1, EV_READ) {
+    acceptor(int port) : net_io_task(-1, EV_READ) {
         // Create a non-blocking master socket.
         tdbg("acceptor: listening on port " << port << std::endl);
         socket sock;

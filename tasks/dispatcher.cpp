@@ -20,7 +20,7 @@
 #include <tasks/dispatcher.h>
 #include <tasks/worker.h>
 #include <tasks/task.h>
-#include <tasks/io_task.h>
+#include <tasks/net_io_task.h>
 #include <tasks/timer_task.h>
 #include <tasks/logging.h>
 #include <cassert>
@@ -58,12 +58,12 @@ dispatcher::dispatcher(uint8_t num_workers)
     ev_signal_start(ev_default_loop(0), &m_signal);
 }
 
-bool dispatcher::start_io_task(task* task) {
+bool dispatcher::start_net_io_task(task* task) {
     bool success = false;
-    io_task* io_task = dynamic_cast<tasks::io_task*>(task);
-    if (nullptr != io_task) {
-        io_task->init_watcher();
-        ev_io_start(ev_default_loop(0), io_task->watcher());
+    net_io_task* net_io_task = dynamic_cast<tasks::net_io_task*>(task);
+    if (nullptr != net_io_task) {
+        net_io_task->init_watcher();
+        ev_io_start(ev_default_loop(0), net_io_task->watcher());
         success = true;
     }
     return success;
@@ -87,7 +87,7 @@ void dispatcher::run(int num, ...) {
         for (int i = 0; i < num; i++) {
             tasks::task* t = va_arg(tasks, tasks::task*);
             // Try to find a proper task specialization and start a watcher
-            bool started = start_io_task(t);
+            bool started = start_net_io_task(t);
             if (!started) started = start_timer_task(t);
         }
         va_end(tasks);

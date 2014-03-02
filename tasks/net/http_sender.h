@@ -26,7 +26,7 @@
 
 #include <tasks/dispatcher.h>
 #include <tasks/logging.h>
-#include <tasks/io_task.h>
+#include <tasks/net_io_task.h>
 #include <tasks/net/http_request.h>
 #include <tasks/net/http_response.h>
 #include <tasks/net/socket.h>
@@ -40,10 +40,10 @@ public:
 };
 
 template<class handler_type>
-class http_sender : public io_task {
+class http_sender : public net_io_task {
 public:
     http_sender()
-        : io_task(-1, EV_UNDEF), m_response(new http_response()) {}
+        : net_io_task(-1, EV_UNDEF), m_response(new http_response()) {}
 
     http_sender(std::shared_ptr<handler_type> handler)
         : handler_type(), m_handler(handler) {}

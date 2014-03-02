@@ -18,13 +18,13 @@
  */
 
 #include <tasks/worker.h>
-#include <tasks/io_task.h>
+#include <tasks/net_io_task.h>
 #include <tasks/logging.h>
 #include <unistd.h>
 
 namespace tasks {
 
-io_task::io_task(int fd, int events) : m_fd(fd), m_events(events) {
+net_io_task::net_io_task(int fd, int events) : m_fd(fd), m_events(events) {
     tdbg(get_string() << ": ctor" << std::endl);
     std::unique_ptr<ev_io> io(new ev_io);
     m_io = std::move(io);
@@ -35,7 +35,7 @@ io_task::io_task(int fd, int events) : m_fd(fd), m_events(events) {
     m_io->data = this;
 }
 
-io_task::~io_task() {
+net_io_task::~net_io_task() {
     tdbg(get_string() << ": dtor" << std::endl);
     // NOTE: The watcher will be stoped by dispose().
     if (-1 != m_fd) {
@@ -43,7 +43,7 @@ io_task::~io_task() {
     }
 }
 
-void io_task::set_fd(int fd) {
+void net_io_task::set_fd(int fd) {
     if (-1 == m_fd) {
         tdbg(get_string() << ": setting file descriptor to " << fd << std::endl);
         m_fd = fd;
@@ -53,7 +53,7 @@ void io_task::set_fd(int fd) {
     }
 }
 
-void io_task::set_events(int events) {
+void net_io_task::set_events(int events) {
     if (m_events != events) {
         tdbg(get_string() << ": setting events to " << events << std::endl);
         m_events = events;
@@ -61,7 +61,7 @@ void io_task::set_events(int events) {
     }
 }
 
-void io_task::start_watcher(worker* worker) {
+void net_io_task::start_watcher(worker* worker) {
     worker->signal_call([this] (struct ev_loop* loop) {
             if (!ev_is_active(m_io.get())) {
                 tdbg(get_string() << ": starting watcher" << std::endl);
@@ -70,7 +70,7 @@ void io_task::start_watcher(worker* worker) {
         });
 }
 
-void io_task::stop_watcher(worker* worker) {
+void net_io_task::stop_watcher(worker* worker) {
     worker->signal_call([this] (struct ev_loop* loop) {
             if (ev_is_active(m_io.get())) {
                 tdbg(get_string() << ": stopping watcher" << std::endl);
@@ -79,7 +79,7 @@ void io_task::stop_watcher(worker* worker) {
         });
 }
 
-void io_task::update_watcher(worker* worker) {
+void net_io_task::update_watcher(worker* worker) {
     if (m_change_pending) {
         worker->signal_call([this] (struct ev_loop* loop) {
                 tdbg(get_string() << ": updating watcher" << std::endl);
@@ -96,25 +96,25 @@ void io_task::update_watcher(worker* worker) {
     }
 }
 
-void io_task::add_task(worker* worker, io_task* task) {
+void net_io_task::add_task(worker* worker, net_io_task* task) {
     worker->signal_call([task] (struct ev_loop* loop) {
-            tdbg(task->get_string() << ": adding io_task" << std::endl);
+            tdbg(task->get_string() << ": adding net_io_task" << std::endl);
             task->init_watcher();
             ev_io_start(loop, task->watcher());
         });
 }
 
-void io_task::add_task(io_task* task) {
+void net_io_task::add_task(net_io_task* task) {
     dispatcher::instance()->first_worker()->async_call([task] (struct ev_loop* loop) {
-            tdbg(task->get_string() << ": adding io_task" << std::endl);
+            tdbg(task->get_string() << ": adding net_io_task" << std::endl);
             task->init_watcher();
             ev_io_start(loop, task->watcher());
         });
 }
 
-void io_task::dispose(worker* worker) {
+void net_io_task::dispose(worker* worker) {
     worker->signal_call([this] (struct ev_loop* loop) {
-            tdbg(get_string() << ": disposing io_task" << std::endl);
+            tdbg(get_string() << ": disposing net_io_task" << std::endl);
             if (ev_is_active(watcher())) {
                 ev_io_stop(loop, watcher());
             }

@@ -17,8 +17,8 @@
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TASKS_IO_TASK_H_
-#define _TASKS_IO_TASK_H_
+#ifndef _TASKS_NET_IO_TASK_H_
+#define _TASKS_NET_IO_TASK_H_
 
 #include <tasks/task.h>
 #include <tasks/ev_wrapper.h>
@@ -29,14 +29,14 @@ namespace tasks {
 
 class worker;
 
-class io_task : public task {
+class net_io_task : public task {
 public:
-    io_task(int fd, int events);
-    virtual ~io_task();
+    net_io_task(int fd, int events);
+    virtual ~net_io_task();
 
     inline std::string get_string() const {
         std::ostringstream os;
-        os << "io_task(" << m_fd << ":" << m_events << ")";
+        os << "net_io_task(" << m_fd << ":" << m_events << ")";
         return os.str();
     }
 
@@ -66,12 +66,12 @@ public:
     // context. If io tasks should be created within the context of a worker thread,
     // you should use the protected non static method and pass a worker thread
     // pointer.
-    static void add_task(io_task* task);
+    static void add_task(net_io_task* task);
 
 protected:
     void set_fd(int fd);
     void set_events(int events);
-    void add_task(worker* worker, io_task* task);
+    void add_task(worker* worker, net_io_task* task);
 
 private:
     std::unique_ptr<ev_io> m_io;
@@ -82,4 +82,4 @@ private:
 
 } // tasks
 
-#endif // _TASKS_IO_TASK_H_
+#endif // _TASKS_NET_IO_TASK_H_

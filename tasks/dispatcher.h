@@ -117,7 +117,7 @@ private:
     std::atomic<bool> m_term;
     
     // Helper to start initial tasks
-    bool start_io_task(task* task);
+    bool start_net_io_task(task* task);
     bool start_timer_task(task* task);
 };
 
