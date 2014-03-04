@@ -25,7 +25,7 @@
 
 #include <iostream>
 #include <arpa/inet.h>
-#include <protocol/TBinaryProtocol.h>
+#include <thrift/protocol/TBinaryProtocol.h>
 
 #ifdef PROFILER
 #include <google/profiler.h>

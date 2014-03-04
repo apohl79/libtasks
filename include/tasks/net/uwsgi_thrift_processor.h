@@ -22,7 +22,7 @@
 
 #include <arpa/inet.h>
 #include <boost/shared_ptr.hpp>
-#include <protocol/TBinaryProtocol.h>
+#include <thrift/protocol/TBinaryProtocol.h>
 
 #include <tasks/net/uwsgi_task.h>
 #include <tasks/net/uwsgi_thrift_transport.h>

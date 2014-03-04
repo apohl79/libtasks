@@ -20,7 +20,7 @@
 #ifndef _UWSGI_THRIFT_TRANSPORT_H_
 #define _UWSGI_THRIFT_TRANSPORT_H_
 
-#include <transport/TVirtualTransport.h>
+#include <thrift/transport/TVirtualTransport.h>
 
 namespace tasks {
 namespace net {

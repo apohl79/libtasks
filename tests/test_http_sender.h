@@ -22,7 +22,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 #include <tasks/dispatcher.h>
-#include <tasks/io_task.h>
+#include <tasks/net_io_task.h>
 #include <tasks/net/http_sender.h>
 
 #include <mutex>

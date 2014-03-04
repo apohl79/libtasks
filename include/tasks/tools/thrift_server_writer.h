@@ -22,7 +22,7 @@
 
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include <protocol/TProtocol.h>
+#include <thrift/protocol/TProtocol.h>
 
 namespace tasks {
 namespace tools {

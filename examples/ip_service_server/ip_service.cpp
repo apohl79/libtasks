@@ -21,7 +21,7 @@
 #include <tasks/net/acceptor.h>
 #include <tasks/net/uwsgi_thrift_processor.h>
 
-#include "IpService.h" // Thrift generated
+#include <IpService.h> // Thrift generated
 #include "ip_service.h"
 
 void ip_service::lookup(response_type& result, const int32_t ipv4, const ipv6_type& ipv6) {

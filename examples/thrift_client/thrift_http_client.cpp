@@ -19,8 +19,8 @@
 
 #include <iostream>
 #include <arpa/inet.h>
-#include <protocol/TBinaryProtocol.h>
-#include <transport/THttpClient.h>
+#include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/transport/THttpClient.h>
 #include <boost/shared_ptr.hpp>
 #include "test_service.h"
 
