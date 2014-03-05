@@ -27,3 +27,5 @@ endif(DEBUG EQUAL 1)
 
 add_library(${PROJECT_NAME} SHARED ${TASKS_SRC})
 target_link_libraries(${PROJECT_NAME} ev)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION lib64)
