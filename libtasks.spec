@@ -36,6 +36,8 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 make install
+cd ${RPM_BUILD_ROOT}/usr/lib64
+ln -s %{name}.so %{name}.so.%{version} 
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -49,6 +51,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc
+%{_libdir}/*.so
 %{_libdir}/*.so.*
 
 %files devel
