@@ -35,7 +35,7 @@ namespace tasks {
 namespace net {
 
 void socket::listen(std::string path, int queue_size) throw(socket_exception) {
-    m_fd = ::socket(PF_INET, SOCK_STREAM, 0);
+    m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
     assert(m_fd > 0);
     if (fcntl(m_fd, F_SETFL, fcntl(m_fd, F_GETFL, 0) | O_NONBLOCK)) {
         throw socket_exception("fcntl failed: " + std::string(std::strerror(errno)));
