@@ -33,7 +33,7 @@ bool uwsgi_request::read_header(int fd) {
     socket sock(fd);
     bool success = false;
     try {
-        std::size_t bytes = sock.read((char*) &m_header, sizeof(m_header));
+        std::streamsize bytes = sock.read((char*) &m_header, sizeof(m_header));
         if (bytes == sizeof(m_header)) {
             success = true;
             tdbg("uwsgi_request::read_header: read header successfully, " << bytes << " bytes" << std::endl);
@@ -50,7 +50,7 @@ bool uwsgi_request::read_vars(int fd) {
     socket sock(fd);
     bool success = true;
     try {
-        std::size_t bytes = sock.read(m_data_buffer.ptr_write(), m_data_buffer.to_write());
+        std::streamsize bytes = sock.read(m_data_buffer.ptr_write(), m_data_buffer.to_write());
         if (bytes > 0) {
             m_data_buffer.move_ptr_write(bytes);
             tdbg("uwsgi_request::read_vars: read data successfully, " << bytes << " bytes" << std::endl);
@@ -82,7 +82,7 @@ bool uwsgi_request::read_content(int fd) {
     socket sock(fd);
     bool success = true;
     try {
-        std::size_t bytes = sock.read(m_content_buffer.ptr_write(), m_content_buffer.to_write());
+        std::streamsize bytes = sock.read(m_content_buffer.ptr_write(), m_content_buffer.to_write());
         if (bytes > 0) {
             m_content_buffer.move_ptr_write(bytes);
             tdbg("uwsgi_request::read_content: read data successfully, " << bytes << " bytes" << std::endl);

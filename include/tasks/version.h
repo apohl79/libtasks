@@ -26,9 +26,7 @@ struct version_helper {
     static const char* version;
 };
 
-static const char* version() {
-    return version_helper::version;
-}
+const char* version();
 
 }
 

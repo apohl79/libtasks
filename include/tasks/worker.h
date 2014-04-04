@@ -138,10 +138,10 @@ public:
 private:
     uint8_t m_id;
     uint64_t m_events_count = 0;
-    std::thread m_thread;
     std::unique_ptr<loop_wrapper> m_loop;
-    std::atomic<bool> m_leader;
     std::atomic<bool> m_term;
+    std::atomic<bool> m_leader;
+    std::thread m_thread;
     std::mutex m_work_mutex;
     std::condition_variable m_work_cond;
     std::queue<event> m_events_queue;
@@ -165,7 +165,7 @@ private:
     
 /* CALLBACKS */
 template<typename EV_t>
-static void tasks_event_callback(struct ev_loop* loop, EV_t w, int e) {
+void tasks_event_callback(struct ev_loop* loop, EV_t w, int e) {
     worker* worker = (tasks::worker*) ev_userdata(loop);
     assert(nullptr != worker);
     task* task = (tasks::task*) w->data;
@@ -174,19 +174,7 @@ static void tasks_event_callback(struct ev_loop* loop, EV_t w, int e) {
     worker->add_event(event);
 }
 
-static void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events) {
-    worker* worker = (tasks::worker*) ev_userdata(loop);
-    assert(nullptr != worker);
-    task_func_queue* tfq = (tasks::task_func_queue*) w->data;
-    if (nullptr != tfq) {
-        std::lock_guard<std::mutex> lock(tfq->mutex);
-        // Execute all queued functors
-        while (!tfq->queue.empty()) {
-            assert(worker->signal_call(tfq->queue.front()));
-            tfq->queue.pop();
-        }
-    }
-}
+void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events);
 
 } // tasks
 

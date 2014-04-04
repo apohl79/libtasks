@@ -10,7 +10,7 @@ include_directories(${PROJECT_SOURCE_DIR}/../include)
 
 file(STRINGS ${PROJECT_SOURCE_DIR}/../VERSION LIBRARY_VERSION)
 #add_compile_options(-O4 -ggdb -std=c++11 -pthread)
-add_definitions(-O4 -ggdb -std=c++11 -pthread)
+add_definitions(-O4 -Wall -ggdb -std=c++11 -pthread)
 add_definitions(-DTASKS_VERSION="${LIBRARY_VERSION}")
 
 if(CMAKE_SYSTEM_NAME STREQUAL Linux)

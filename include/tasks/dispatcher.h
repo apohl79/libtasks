@@ -100,6 +100,7 @@ public:
     
 private:
     static std::shared_ptr<dispatcher> m_instance;
+    std::atomic<bool> m_term;
 
     // All worker threads
     std::vector<std::shared_ptr<worker> > m_workers;
@@ -113,8 +114,6 @@ private:
     std::mutex m_finish_mutex;
 
     ev_signal m_signal;
-
-    std::atomic<bool> m_term;
     
     // Helper to start initial tasks
     bool start_net_io_task(task* task);

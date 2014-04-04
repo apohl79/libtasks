@@ -67,7 +67,7 @@ public:
         m_content_buffer.write(data, size);
     }
 
-    inline std::size_t read(char* data, std::size_t size) {
+    inline std::streamsize read(char* data, std::size_t size) {
         return m_content_buffer.read(data, size);
     }
 

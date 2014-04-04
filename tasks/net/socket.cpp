@@ -54,7 +54,6 @@ void socket::listen(std::string path, int queue_size) throw(socket_exception) {
 
 void socket::listen(int port, std::string ip, int queue_size) throw(socket_exception) {
     int on = 1;
-    int ret = 0;
     m_fd = ::socket(PF_INET, SOCK_STREAM, 0);
     assert(m_fd > 0);
     if (setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on))) {
@@ -132,8 +131,8 @@ void socket::close() {
 void socket::shutdown() {
     ::shutdown(m_fd, SHUT_RDWR);
 }
-
-std::size_t socket::write(const char* data, std::size_t len) throw(socket_exception) {
+    
+std::streamsize socket::write(const char* data, std::size_t len) throw(socket_exception) {
     ssize_t bytes = sendto(m_fd, data, len, SENDTO_FLAGS, nullptr, 0);
     if (bytes < 0 && errno != EAGAIN) {
         std::stringstream s;
@@ -143,7 +142,7 @@ std::size_t socket::write(const char* data, std::size_t len) throw(socket_except
     return bytes;
 }
 
-std::size_t socket::read(char* data, std::size_t len) throw(socket_exception) {
+std::streamsize socket::read(char* data, std::size_t len) throw(socket_exception) {
 	ssize_t bytes = recvfrom(m_fd, data, len, RECVFROM_FLAGS, nullptr, nullptr);
 	if (bytes < 0 && errno != EAGAIN) {
         std::stringstream s;

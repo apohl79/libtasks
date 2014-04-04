@@ -59,7 +59,7 @@ bool http_response::read_data(int fd) {
         m_state = READ_DATA;
     }
     if (DONE != m_state) {
-        std::size_t towrite = 0, bytes = 0;
+        std::streamsize towrite = 0, bytes = 0;
         do {
             towrite = m_content_buffer.to_write() - 1;
             if (towrite < READ_BUFFER_SIZE_BLOCK - 1) {

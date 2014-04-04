@@ -105,11 +105,11 @@ public:
         setg(ptr_begin(), ptr(pos), ptr_end());
     }
 
-    inline std::size_t to_write() const {
+    inline std::streamsize to_write() const {
         return ptr_end() - pptr();
     }
 
-    inline std::size_t to_read() const {
+    inline std::streamsize to_read() const {
         return ptr_end() - gptr();
     }
 

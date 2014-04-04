@@ -23,4 +23,8 @@ namespace tasks {
 
 const char* version_helper::version = TASKS_VERSION;
 
+const char* version() {
+    return version_helper::version;
+}
+
 }
