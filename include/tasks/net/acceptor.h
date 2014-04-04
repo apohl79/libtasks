@@ -48,6 +48,19 @@ public:
             assert(false);
         }
     }
+
+    acceptor(std::string path) : net_io_task(-1, EV_READ) {
+        // Create a non-blocking master socket.
+        tdbg("acceptor: listening on unix:" << path << std::endl);
+        socket sock;
+        try {
+            sock.listen(path);
+            set_fd(sock.fd());
+        } catch (socket_exception e) {
+            terr("acceptor: " << e.what() << std::endl);
+            assert(false);
+        }
+    }
         
     ~acceptor() {
         socket(fd()).shutdown();
