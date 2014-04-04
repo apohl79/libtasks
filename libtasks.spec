@@ -26,7 +26,7 @@ developing applications that use %{name}.
 
 %prep
 rm -rf %{name}
-git clone -b cmake_integration  https://github.com/apohl79/libtasks.git %{name}
+git clone https://github.com/apohl79/libtasks.git %{name}
 
 %build
 rm -rf ${RPM_BUILD_ROOT}
