@@ -29,18 +29,14 @@ disk_io_task::disk_io_task(int fd, int events, tools::buffer* buf)
     tdbg(get_string() << ": ctor" << std::endl);
 }
 
-disk_io_task::disk_io_task(int fd, int events, tools::buffer* buf, std::streamsize* ret)
-    : m_fd(fd), m_events(events), m_buf(buf), m_ret(ret) {
-    tdbg(get_string() << ": ctor" << std::endl);
-}
-
 disk_io_task::~disk_io_task() {
     tdbg(get_string() << ": dtor" << std::endl);
 }
 
-void disk_io_task::op() {
+std::shared_future<std::streamsize> disk_io_task::op() {
     // run the io op in a separate thread
-    m_handle = std::async(std::launch::async, [this] {
+    std::promise<std::streamsize> bytes_promise;
+    std::async(std::launch::async, [this, &bytes_promise] {
             switch (m_events) {
             case EV_READ:
                 tdbg(get_string() << ": calling read()" << std::endl);
@@ -59,13 +55,12 @@ void disk_io_task::op() {
                 m_bytes = -1;
                 terr(get_string() << ": events has to be either EV_READ or EV_WRITE" << std::endl);
             }
-            if (nullptr != m_ret) {
-                *m_ret = m_bytes;
-            }
+            bytes_promise.set_value(m_bytes);
             // fire an event
             event e = {this, m_events};
             worker::add_async_event(e);
         });
+    return bytes_promise.get_future();
 }
 
 bool disk_io_task::handle_event(worker* worker, int events) {

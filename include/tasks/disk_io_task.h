@@ -23,6 +23,7 @@
 #include <tasks/task.h>
 #include <tasks/ev_wrapper.h>
 #include <tasks/tools/buffer.h>
+#include <tasks/logging.h>
 #include <future>
 
 namespace tasks {
@@ -32,7 +33,6 @@ class worker;
 class disk_io_task : public task {
 public:
     disk_io_task(int fd, int events, tools::buffer* buf);
-    disk_io_task(int fd, int events, tools::buffer* buf, std::streamsize* ret);
     virtual ~disk_io_task();
 
     inline std::string get_string() const {
@@ -41,12 +41,7 @@ public:
         return os.str();
     }
 
-    /*
-     * Return the number of bytes written to or read from the file. This method waites for
-     * io operation to complete.
-     */
-    inline std::streamsize bytes(bool block = false) const {
-        m_handle.wait();
+    inline std::streamsize bytes() const {
         return m_bytes;
     }
 
@@ -56,9 +51,9 @@ public:
 
     virtual void dispose(worker* worker);
 
-    static void add_task(disk_io_task* task) {
+    static std::shared_future<std::streamsize> add_task(disk_io_task* task) {
         assert(nullptr != task);
-        task->op();
+        return task->op();
     }
 
 private:
@@ -66,10 +61,8 @@ private:
     int m_events = EV_UNDEF;
     tools::buffer* m_buf = nullptr;
     std::streamsize m_bytes = -1;
-    std::streamsize* m_ret = nullptr;
-    std::future<void> m_handle;
 
-    void op();
+    std::shared_future<std::streamsize> op();
 };
 
 } // tasks
