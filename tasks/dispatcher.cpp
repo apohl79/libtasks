@@ -102,8 +102,8 @@ void dispatcher::run(int num, ...) {
 
 void dispatcher::start() {
     // Create an event loop and pass it to a worker
-    std::unique_ptr<loop_wrapper> loop(new loop_wrapper);
-    loop->loop = ev_default_loop(0);
+    std::unique_ptr<loop_t> loop(new loop_t);
+    loop->ptr = ev_default_loop(0);
     m_workers_busy.unset(0);
     m_workers[0]->set_event_loop(std::move(loop));
 }
@@ -139,20 +139,6 @@ void dispatcher::add_free_worker(uint8_t id) {
 void dispatcher::print_worker_stats() const {
     for (auto &w: m_workers) {
         terr(w->get_string() << ": number of handled events is " << w->events_count() << std::endl);
-    }
-}
-
-void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events) {
-    worker* worker = (tasks::worker*) ev_userdata(loop);
-    assert(nullptr != worker);
-    task_func_queue* tfq = (tasks::task_func_queue*) w->data;
-    if (nullptr != tfq) {
-        std::lock_guard<std::mutex> lock(tfq->mutex);
-        // Execute all queued functors
-        while (!tfq->queue.empty()) {
-            assert(worker->signal_call(tfq->queue.front()));
-            tfq->queue.pop();
-        }
     }
 }
 

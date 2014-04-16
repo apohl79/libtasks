@@ -35,7 +35,7 @@ worker::~worker() {
     task_func_queue* tfq = (task_func_queue*) m_signal_watcher.data;
     delete tfq;
 }
-    
+
 void worker::run() {
     // Wait for a short while before entering the loop to allow
     // the dispatcher to finish its initialization.
@@ -54,7 +54,7 @@ void worker::run() {
         // Became leader, so execute the event loop
         while (m_leader && !m_term) {
             tdbg(get_string() << ": running event loop" << std::endl);
-            ev_loop(m_loop->loop, EVLOOP_ONESHOT);
+            ev_loop(m_loop->ptr, EVLOOP_ONESHOT);
             tdbg(get_string() << ": event loop returned" << std::endl);
             // Check if events got fired
             if (!m_events_queue.empty()) {
@@ -88,8 +88,22 @@ void worker::run() {
             if (m_leader) {
                 // FIXME: Iterate over all watchers and delete
                 // registered tasks.
-                ev_unloop(m_loop->loop, EVUNLOOP_ALL);
+                ev_unloop(m_loop->ptr, EVUNLOOP_ALL);
             }
+        }
+    }
+}
+
+void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events) {
+    worker* worker = (tasks::worker*) ev_userdata(loop);
+    assert(nullptr != worker);
+    task_func_queue* tfq = (tasks::task_func_queue*) w->data;
+    if (nullptr != tfq) {
+        std::lock_guard<std::mutex> lock(tfq->mutex);
+        // Execute all queued functors
+        while (!tfq->queue.empty()) {
+            assert(worker->signal_call(tfq->queue.front()));
+            tfq->queue.pop();
         }
     }
 }

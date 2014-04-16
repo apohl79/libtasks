@@ -39,9 +39,8 @@ namespace tasks {
 class task;
 
 // Needed to use std::unique_ptr<>
-class loop_wrapper {
-public:
-    struct ev_loop *loop;
+struct loop_t {
+    struct ev_loop* ptr;
 };
 
 // Signals to enter the leader thread context
@@ -82,7 +81,7 @@ public:
     inline bool signal_call(task_func f) {
         if (m_leader) {
             // The worker is the leader, now execute the functor
-            f(m_loop->loop);
+            f(m_loop->ptr);
             return true;
         } else {
             async_call(f);
@@ -97,10 +96,10 @@ public:
         ev_async_send(ev_default_loop(0), &m_signal_watcher);
     }
 
-    inline void set_event_loop(std::unique_ptr<loop_wrapper> loop) {
+    inline void set_event_loop(std::unique_ptr<loop_t> loop) {
         m_loop = std::move(loop);
         m_leader = true;
-        ev_set_userdata(m_loop->loop, this);
+        ev_set_userdata(m_loop->ptr, this);
         m_work_cond.notify_one();
     }
 
@@ -138,7 +137,7 @@ public:
 private:
     uint8_t m_id;
     uint64_t m_events_count = 0;
-    std::unique_ptr<loop_wrapper> m_loop;
+    std::unique_ptr<loop_t> m_loop;
     std::atomic<bool> m_term;
     std::atomic<bool> m_leader;
     std::thread m_thread;

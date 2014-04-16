@@ -68,7 +68,7 @@ public:
             m_instance = nullptr;
         }
     }
-        
+
     // Get a free worker to promote it to the leader.
     std::shared_ptr<worker> free_worker();
 
