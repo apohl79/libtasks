@@ -11,3 +11,8 @@ file(GLOB tools_headers "include/tasks/tools/*.h")
 install(FILES ${tasks_headers} DESTINATION include/tasks)
 install(FILES ${net_headers} DESTINATION include/tasks/net)
 install(FILES ${tools_headers} DESTINATION include/tasks/tools)
+
+enable_testing()
+add_test(NAME UnitTests
+         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests 
+         COMMAND ${PROJECT_SOURCE_DIR}/tests/runtests.sh ./libtasks-tests ${PROJECT_SOURCE_DIR}/tests)
