@@ -34,7 +34,7 @@ namespace net {
 template<class processor_type, class handler_type>
 class uwsgi_thrift_processor : public tasks::net::uwsgi_task {
 public:
-    uwsgi_thrift_processor(int s) : uwsgi_task(s) {}
+    uwsgi_thrift_processor(net::socket& s) : uwsgi_task(s) {}
     
     virtual bool handle_request() {
         using namespace apache::thrift::protocol;

@@ -29,8 +29,7 @@ namespace net {
 
 std::string uwsgi_request::NO_VAL;
 
-bool uwsgi_request::read_header(int fd) {
-    socket sock(fd);
+bool uwsgi_request::read_header(socket& sock) {
     bool success = false;
     try {
         std::streamsize bytes = sock.read((char*) &m_header, sizeof(m_header));
@@ -40,14 +39,13 @@ bool uwsgi_request::read_header(int fd) {
         } else {
             terr("uwsgi_request::read_header: error reading header" << std::endl);
         }
-    } catch (socket_exception e) {
+    } catch (socket_exception& e) {
         terr("uwsgi_request::read_header: " << e.what() << std::endl);
     }
     return success;
 }
 
-bool uwsgi_request::read_vars(int fd) {
-    socket sock(fd);
+bool uwsgi_request::read_vars(socket& sock) {
     bool success = true;
     try {
         std::streamsize bytes = sock.read(m_data_buffer.ptr_write(), m_data_buffer.to_write());
@@ -71,15 +69,14 @@ bool uwsgi_request::read_vars(int fd) {
                 }
             }
         }
-    } catch (socket_exception e) {
+    } catch (socket_exception& e) {
         terr("uwsgi_request::read_vars: " << e.what() << std::endl);
         success = false;
     }
     return success;
 }
 
-bool uwsgi_request::read_content(int fd) {
-    socket sock(fd);
+bool uwsgi_request::read_content(socket& sock) {
     bool success = true;
     try {
         std::streamsize bytes = sock.read(m_content_buffer.ptr_write(), m_content_buffer.to_write());
@@ -87,7 +84,7 @@ bool uwsgi_request::read_content(int fd) {
             m_content_buffer.move_ptr_write(bytes);
             tdbg("uwsgi_request::read_content: read data successfully, " << bytes << " bytes" << std::endl);
         }
-    } catch (socket_exception e) {
+    } catch (socket_exception& e) {
         terr("uwsgi_request::read_content: " << e.what() << std::endl);
         success = false;
     }
@@ -99,20 +96,20 @@ bool uwsgi_request::read_content(int fd) {
     return success;
 }
 
-bool uwsgi_request::read_data(int fd) {
+bool uwsgi_request::read_data(socket& sock) {
     bool success = true;
     if (READY == m_state) {
         m_state = READ_HEADER;
-        if ((success = read_header(fd))) {
+        if ((success = read_header(sock))) {
             m_state = READ_DATA;
             m_data_buffer.set_size(m_header.datasize);
         }
     }
     if (success && READ_DATA == m_state) {
-        success = read_vars(fd);
+        success = read_vars(sock);
     }
     if (success && READ_CONTENT == m_state) {
-        success = read_content(fd);
+        success = read_content(sock);
     }
     return success;
 }

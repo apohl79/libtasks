@@ -43,15 +43,15 @@ template<class handler_type>
 class http_sender : public net_io_task {
 public:
     http_sender()
-        : net_io_task(-1, EV_UNDEF), m_response(new http_response()) {}
+        : net_io_task(EV_UNDEF), m_response(new http_response()) {}
 
     http_sender(std::shared_ptr<handler_type> handler)
-        : handler_type(), m_handler(handler) {}
+        : net_io_task(EV_UNDEF), handler_type(), m_handler(handler) {}
 
     bool handle_event(tasks::worker* worker, int revents) {
         bool success = true;
         if (EV_READ & revents) {
-            if (m_response->read_data(fd())) {
+            if (m_response->read_data(socket())) {
                 if (m_response->done()) {
                     if (nullptr == m_handler) {
                         m_handler = std::make_shared<handler_type>();
@@ -67,7 +67,7 @@ public:
                 success = false;
             }
         } else if (EV_WRITE & revents) {
-            if (m_request->write_data(fd())) {
+            if (m_request->write_data(socket())) {
                 if (m_request->done()) {
                     set_events(EV_READ);
                     update_watcher(worker);
@@ -82,19 +82,15 @@ public:
     inline bool send(std::shared_ptr<http_request> request) {
         m_request = request;
         const std::string& host = m_request->header("Host");
-        if (-1 == fd() || m_host != host) {
+        if (-1 == socket().fd() || m_host != host) {
             m_host = host;
             m_port = m_request->port();
             // Close an existing connection
-            if (-1 != fd()) {
-                socket(fd()).close();
-            }
+            socket().close();
             // Connect
             tdbg("http_sender: Connecting " << m_host << ":" << m_port << std::endl);
-            socket sock;
             try {
-                sock.connect(m_host, m_port);
-                set_fd(sock.fd());
+                socket().connect(m_host, m_port);
             } catch (socket_exception e) {
                 terr("http_sender: " << e.what() << std::endl);
                 return false;

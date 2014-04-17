@@ -51,8 +51,7 @@ void http_response::prepare_data_buffer() {
 }
 
 // We are reading things into the content buffer only.
-bool http_response::read_data(int fd) {
-    socket sock(fd);
+bool http_response::read_data(socket& sock) {
     bool success = true;
     if (READY == m_state) {
         m_content_buffer.set_size(READ_BUFFER_SIZE_BLOCK);
@@ -83,7 +82,7 @@ bool http_response::read_data(int fd) {
                         m_state = DONE;
                     }
                 }
-            } catch (socket_exception e) {
+            } catch (socket_exception& e) {
                 terr("http_response: " << e.what() << std::endl);
                 success = false;
             }

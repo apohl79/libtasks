@@ -39,7 +39,7 @@ namespace net {
 
 class uwsgi_task : public tasks::net_io_task {
 public:
-    uwsgi_task(int socket) : tasks::net_io_task(socket, EV_READ) {}
+    uwsgi_task(net::socket& sock) : tasks::net_io_task(sock, EV_READ) {}
     virtual ~uwsgi_task() {}
 
     bool handle_event(tasks::worker* worker, int revents);

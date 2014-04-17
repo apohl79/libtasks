@@ -26,7 +26,6 @@
 #include <tasks/net_io_task.h>
 #include <tasks/dispatcher.h>
 #include <tasks/logging.h>
-#include <tasks/net/socket.h>
 
 namespace tasks {
 namespace net {
@@ -36,44 +35,39 @@ namespace net {
 template<class T>
 class acceptor : public net_io_task {
 public:
-    acceptor(int port) : net_io_task(-1, EV_READ) {
+    acceptor(int port) : net_io_task(EV_READ) {
         // Create a non-blocking master socket.
         tdbg("acceptor: listening on port " << port << std::endl);
-        socket sock;
         try {
-            sock.listen(port);
-            set_fd(sock.fd());
-        } catch (socket_exception e) {
+            socket().listen(port);
+        } catch (socket_exception& e) {
             terr("acceptor: " << e.what() << std::endl);
             assert(false);
         }
     }
 
-    acceptor(std::string path) : net_io_task(-1, EV_READ) {
+    acceptor(std::string path) : net_io_task(EV_READ) {
         // Create a non-blocking master socket.
         tdbg("acceptor: listening on unix:" << path << std::endl);
-        socket sock;
         try {
-            sock.listen(path);
-            set_fd(sock.fd());
-        } catch (socket_exception e) {
+            socket().listen(path);
+        } catch (socket_exception& e) {
             terr("acceptor: " << e.what() << std::endl);
             assert(false);
         }
     }
         
     ~acceptor() {
-        socket(fd()).shutdown();
+        socket().shutdown();
     }
 
     bool handle_event(worker* worker, int revents)  {
-        socket sock(fd());
         try {
-            socket client = sock.accept();
+            net::socket client = socket().accept();
             tdbg("acceptor: new client fd " << client.fd() << std::endl);
-            T* task = new T(client.fd());
+            T* task = new T(client);
             add_task(worker, task);
-        } catch (socket_exception e) {
+        } catch (socket_exception& e) {
             terr("acceptor: " << e.what() << std::endl);
             assert(false);
         }

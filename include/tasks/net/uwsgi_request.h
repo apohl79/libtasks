@@ -26,6 +26,7 @@
 #include <vector>
 #include <iostream>
 
+#include <tasks/net/socket.h>
 #include <tasks/net/uwsgi_structs.h>
 #include <tasks/net/io_state.h>
 #include <tasks/tools/buffer.h>
@@ -71,7 +72,7 @@ public:
         return m_content_buffer.read(data, size);
     }
 
-    bool read_data(int fd);
+    bool read_data(socket& sock);
 
     inline bool done() const {
         return m_state == DONE;
@@ -98,9 +99,9 @@ private:
     io_state m_state = READY;
     std::unordered_map<std::string, std::string> m_vars;
 
-    bool read_header(int fd);
-    bool read_vars(int fd);
-    bool read_content(int fd);
+    bool read_header(socket& sock);
+    bool read_vars(socket& sock);
+    bool read_content(socket& sock);
     bool parse_vars();
 };
 

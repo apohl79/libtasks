@@ -56,7 +56,7 @@ private:
 
 class echo_handler : public tasks::net_io_task {
 public:
-    echo_handler(int socket) : net_io_task(socket, EV_READ) {
+    echo_handler(tasks::net::socket& socket) : net_io_task(socket, EV_READ) {
         stats::inc_clients();
     }
     

@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <tasks/net/socket.h>
 #include <tasks/net/io_state.h>
 #include <tasks/tools/buffer.h>
 
@@ -103,9 +104,9 @@ public:
 
     virtual void prepare_data_buffer() = 0;
     
-    bool write_data(int fd);
+    bool write_data(socket& sock);
 
-    bool read_data(int fd);
+    bool read_data(socket& sock);
 
     inline void print() const {
         for (auto &kv : m_headers) {
@@ -137,8 +138,8 @@ protected:
     std::istream m_content_istream;
     std::ostream m_content_ostream;
 
-    bool write_headers(int fd);
-    bool write_content(int fd);
+    bool write_headers(socket& sock);
+    bool write_content(socket& sock);
 };
 
 } // net

@@ -21,6 +21,7 @@
 #define _TASKS_NET_IO_TASK_H_
 
 #include <tasks/task.h>
+#include <tasks/net/socket.h>
 #include <tasks/ev_wrapper.h>
 #include <memory>
 #include <sstream>
@@ -31,17 +32,18 @@ class worker;
 
 class net_io_task : public task {
 public:
-    net_io_task(int fd, int events);
+    net_io_task(int events);
+    net_io_task(net::socket& socket, int events);
     virtual ~net_io_task();
 
     inline std::string get_string() const {
         std::ostringstream os;
-        os << "net_io_task(" << m_fd << ":" << m_events << ")";
+        os << "net_io_task(" << m_socket.fd() << ":" << m_events << ")";
         return os.str();
     }
 
-    inline int fd() const {
-        return m_fd;
+    inline net::socket& socket() {
+        return m_socket;
     }
 
     inline int events() const {
@@ -53,7 +55,7 @@ public:
     }
 
     inline void init_watcher() {
-        ev_io_set(m_io.get(), m_fd, m_events);
+        ev_io_set(m_io.get(), m_socket.fd(), m_events);
     }
 
     void start_watcher(worker* worker);
@@ -69,13 +71,13 @@ public:
     static void add_task(net_io_task* task);
 
 protected:
-    void set_fd(int fd);
+    void set_socket(net::socket& socket);
     void set_events(int events);
     void add_task(worker* worker, net_io_task* task);
 
 private:
     std::unique_ptr<ev_io> m_io;
-    int m_fd = -1;
+    net::socket m_socket;
     int m_events = EV_UNDEF;
     bool m_change_pending = false;
 };

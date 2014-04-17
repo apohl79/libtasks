@@ -52,7 +52,7 @@ public:
 
     void prepare_data_buffer();
     
-    bool read_data(int fd);
+    bool read_data(net::socket& sock);
     
     void clear() {
         http_base::clear();

@@ -24,32 +24,34 @@
 
 namespace tasks {
 
-net_io_task::net_io_task(int fd, int events) : m_fd(fd), m_events(events) {
+net_io_task::net_io_task(int events) : m_events(events) {
     tdbg(get_string() << ": ctor" << std::endl);
     std::unique_ptr<ev_io> io(new ev_io);
     m_io = std::move(io);
     ev_init(m_io.get(), tasks_event_callback<ev_io*>);
-    if (-1 != m_fd) {
-        ev_io_set(m_io.get(), m_fd, m_events);
-    }
     m_io->data = this;
+}
+
+net_io_task::net_io_task(net::socket& socket, int events) : net_io_task(events) {
+    m_socket = socket;
+    if (-1 != m_socket.fd()) {
+        ev_io_set(m_io.get(), m_socket.fd(), m_events);
+    }
 }
 
 net_io_task::~net_io_task() {
     tdbg(get_string() << ": dtor" << std::endl);
     // NOTE: The watcher will be stoped by dispose().
-    if (-1 != m_fd) {
-        close(m_fd);
-    }
+    m_socket.close();
 }
 
-void net_io_task::set_fd(int fd) {
-    if (-1 == m_fd) {
-        tdbg(get_string() << ": setting file descriptor to " << fd << std::endl);
-        m_fd = fd;
+void net_io_task::set_socket(net::socket& socket) {
+    if (-1 == m_socket.fd()) {
+        tdbg(get_string() << ": setting file descriptor to " << socket.fd() << std::endl);
+        m_socket = socket;
         m_change_pending = true;
     } else {
-        terr(get_string() << ": set_fd is only allowed once" << std::endl);
+        terr(get_string() << ": set_socket is only allowed once" << std::endl);
     }
 }
 
@@ -87,7 +89,7 @@ void net_io_task::update_watcher(worker* worker) {
                 if (active) {
                     ev_io_stop(loop, m_io.get());
                 }
-                ev_io_set(m_io.get(), m_fd, m_events);
+                ev_io_set(m_io.get(), m_socket.fd(), m_events);
                 if (active) {
                     ev_io_start(loop, m_io.get());
                 }

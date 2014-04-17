@@ -38,15 +38,14 @@ std::atomic<int> stats::m_req_count;
 std::atomic<int> stats::m_clients;
 
 bool echo_handler::handle_event(tasks::worker* worker, int events) {
-    socket sock(fd());
     if (events & EV_READ) {
         try {
             std::vector<char> buf(1024);
-            std::size_t bytes = sock.read(&buf[0], buf.size());
+            std::size_t bytes = socket().read(&buf[0], buf.size());
             tdbg("echo_handler: read " << bytes << " bytes" << std::endl);
             buf.resize(bytes);
             m_write_queue.push(std::move(buf));
-        } catch (socket_exception e) {
+        } catch (socket_exception& e) {
             terr("echo_handler::handle_event: " << e.what() << std::endl);
             return false;
         }
@@ -56,7 +55,7 @@ bool echo_handler::handle_event(tasks::worker* worker, int events) {
             std::vector<char>& buf = m_write_queue.front();
             try {
                 std::size_t len = buf.size() - m_write_offset;
-                std::size_t bytes = sock.write(&buf[m_write_offset], len);
+                std::size_t bytes = socket().write(&buf[m_write_offset], len);
                 tdbg("echo_handler: wrote " << bytes << " bytes" << std::endl);
                 if (bytes == len) {
                     // buffer send completely
@@ -66,7 +65,7 @@ bool echo_handler::handle_event(tasks::worker* worker, int events) {
                 } else {
                     m_write_offset += bytes;
                 }
-            } catch (socket_exception e) {
+            } catch (socket_exception& e) {
                 terr("echo_handler::handle_event: " << e.what() << std::endl);
                 return false;
             }
