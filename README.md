@@ -1,12 +1,12 @@
 libtasks
 ========
 
-A simple task system written in C++11 that implements the leader/follower pattern
-and uses libev.
+Overview
+--------
 
-Have a look at the examples to get a sense. A macbook pro with a 2.5Ghz I5 can
-handle around 40.000 echo requests/s while the generator runs on it as well. The
-number of clients is independant from the throughput. See the echoserver example.
+libtasks is a simple task system written in modern C++ that implements the leader/follower pattern and uses libev. It allows for writing event based applications and supports network and disk IO.
+
+libtasks supports the [uwsgi protocol](http://uwsgi-docs.readthedocs.org/en/latest/Protocol.html). This protocol is supported by web servers like [nginx](http://nginx.org/) or [cherokee](http://cherokee-project.com/) and can be used to create high performance web applications.
 
 
 What you can do
