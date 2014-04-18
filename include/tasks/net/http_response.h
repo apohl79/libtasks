@@ -22,12 +22,6 @@
 
 #define READ_BUFFER_SIZE_BLOCK 4096
 
-#ifdef __linux__
-#define RECVFROM_FLAGS MSG_DONTWAIT
-#else
-#define RECVFROM_FLAGS 0
-#endif
-
 #include <tasks/net/http_base.h>
 
 namespace tasks {
