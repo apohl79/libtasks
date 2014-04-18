@@ -115,6 +115,9 @@ void net_io_task::add_task(net_io_task* task) {
 }
 
 void net_io_task::dispose(worker* worker) {
+    if (nullptr == worker) {
+        worker = dispatcher::instance()->first_worker();
+    }
     worker->signal_call([this] (struct ev_loop* loop) {
             tdbg(get_string() << ": disposing net_io_task" << std::endl);
             if (ev_is_active(watcher())) {

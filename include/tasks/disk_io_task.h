@@ -49,7 +49,7 @@ public:
     virtual void start_watcher(worker* worker) {}
     virtual void stop_watcher(worker* worker) {}
 
-    virtual void dispose(worker* worker);
+    virtual void dispose(worker* worker = nullptr);
 
     static std::shared_future<std::streamsize> add_task(disk_io_task* task) {
         assert(nullptr != task);

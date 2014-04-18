@@ -62,7 +62,7 @@ public:
     void stop_watcher(worker* worker);
     void update_watcher(worker* worker);
 
-    virtual void dispose(worker* worker);
+    virtual void dispose(worker* worker = nullptr);
 
     // This public method can be used to add io tasks outside of a worker thread
     // context. If io tasks should be created within the context of a worker thread,

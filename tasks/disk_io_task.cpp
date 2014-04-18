@@ -69,6 +69,9 @@ bool disk_io_task::handle_event(worker* worker, int events) {
 }
 
 void disk_io_task::dispose(worker* worker) {
+    if (nullptr == worker) {
+        worker = dispatcher::instance()->first_worker();
+    }
     worker->signal_call([this] (struct ev_loop* loop) {
             tdbg(get_string() << ": disposing disk_io_task" << std::endl);
             delete this;
