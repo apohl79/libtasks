@@ -36,21 +36,21 @@ extern std::mutex g_log_mutex;
 #endif
 
 // Using the C time variants as std::put_time is not implemented yet.
-#define tlog(s,m)														\
-	{																	\
-		_LOGMUTEX;														\
-		s << "["														\
-		  << std::setw(14)												\
-		  << std::this_thread::get_id() << " "							\
-		  << std::setw(16)												\
-		  << __FILE__ << ":"											\
-		  << std::setw(3)												\
-		  << std::setfill('0')											\
-		  << __LINE__ << "] "											\
-		  << std::setfill(' ')											\
-		  << m << std::flush;											\
-	}
-	
+#define tlog(s,m)                                                       \
+    {                                                                   \
+        _LOGMUTEX;                                                      \
+        s << "["                                                        \
+          << std::setw(14)                                              \
+          << std::this_thread::get_id() << " "                          \
+          << std::setw(16)                                              \
+          << __FILE__ << ":"                                            \
+          << std::setw(3)                                               \
+          << std::setfill('0')                                          \
+          << __LINE__ << "] "                                           \
+          << std::setfill(' ')                                          \
+          << m << std::flush;                                           \
+    }
+
 #ifdef DEBUG
 #define tdbg(m) tlog(std::cout,m)
 #else
