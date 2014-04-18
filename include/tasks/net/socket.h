@@ -22,14 +22,19 @@
 
 #include <string>
 #include <exception>
+#include <memory>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #ifdef __linux__
 #define SENDTO_FLAGS MSG_NOSIGNAL
-#define RECVFROM_FLAGS MSG_DONTWAIT
+#define RECVFROM_FLAGS MSG_NOSIGNAL
 #else
 #define SENDTO_FLAGS 0
 #define RECVFROM_FLAGS 0
 #endif
+
+struct sockaddr_in;
 
 namespace tasks {
 namespace net {
@@ -53,10 +58,30 @@ public:
         return m_fd;
     }
 
+    inline bool udp() const {
+        return m_udp;
+    }
+
+    inline bool tcp() const {
+        return !m_udp;
+    }
+
+    inline std::shared_ptr<struct sockaddr_in> addr() {
+        return m_addr;
+    }
+
+    inline void set_blocking() {
+        m_blocking = true;
+    }
+
+    // bind for udp sockets. This method can be used to bind udp sockets. For tcp servers
+    // socket::listen has to be called.
+    void bind(int port, std::string ip = "") throw(socket_exception);
+
     // listen for unix domain sockets
     void listen(std::string path, int queue_size = 128) throw(socket_exception);
     
-    // listen for network sockets
+    // listen for tcp sockets
     void listen(int port, std::string ip = "", int queue_size = 128) throw(socket_exception);
 
     socket accept() throw(socket_exception);
@@ -70,11 +95,19 @@ public:
     void shutdown();
     void close();
     
-    std::streamsize write(const char* data, std::size_t len) throw(socket_exception);
+    std::streamsize write(const char* data, std::size_t len,
+                          int port = -1, std::string ip = "") throw(socket_exception);
     std::streamsize read(char* data, std::size_t len) throw(socket_exception);
 
 private:
     int m_fd = -1;
+    bool m_udp = false;
+    bool m_blocking = false;
+    std::shared_ptr<struct sockaddr_in> m_addr;
+
+    void bind(int port, std::string ip, bool udp) throw(socket_exception);
+    void init_sockaddr(int port, std::string ip = "");
+
 };
 
 } // net
