@@ -31,11 +31,15 @@
 
 #include "test_http_sender.h"
 #include "test_disk_io_task.h"
+#include "test_socket.h"
+#include "test_uwsgi_thrift.h"
 
 #include <tasks/dispatcher.h>
 
 CPPUNIT_TEST_SUITE_REGISTRATION(test_http_sender);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_disk_io_task);
+CPPUNIT_TEST_SUITE_REGISTRATION(test_socket);
+CPPUNIT_TEST_SUITE_REGISTRATION(test_uwsgi_thrift);
 
 int main(int argc, char** argv) {
     tasks::dispatcher::instance()->start();
