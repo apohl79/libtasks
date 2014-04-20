@@ -15,7 +15,7 @@ In detail: multiple former leader threads can process events concurrently while 
 
 The figure below illustrates the states and the valid transitions in the Leader/Followers pattern.
 
-![](https://github.com/apohl/libtasks/blob/master/docs/leader-followers.png?raw=true "Leader/Followers")
+![](https://raw.githubusercontent.com/apohl79/libtasks/master/docs/leader-followers.png "Leader/Followers")
 
 Use cases
 ---------
