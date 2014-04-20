@@ -60,7 +60,7 @@ auto request = std::make_shared<http_request>("www.google.com", "/");
 sender.send(request);
 ```
 
-### A thrift server (HTTP/uwsgi transport)
+### A thrift server with HTTP/uwsgi transport
 
 Consider you want to write a service that looks up information for a given IP address. Look at the [ip_service_server](examples/ip_service_server) example for the details like the thrift IDL.
 
