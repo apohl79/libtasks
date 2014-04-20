@@ -40,10 +40,12 @@ Examples
 ### A HTTP client
 
 ```C++
+using namespace tasks::net;
+
 // Create a handler for the HTTP response
-class test_handler : public tasks::net::http_response_handler {
+class test_handler : public http_response_handler {
 public:
-    bool handle_response(std::shared_ptr<tasks::net::http_response> response) {
+    bool handle_response(std::shared_ptr<http_response> response) {
         std::cout << "Got status " << response->status() << std::endl;
         if (response->content_length()) {
             std::cout << "Content:" << std::endl << response->content_p() << std::endl;
@@ -53,18 +55,21 @@ public:
 };
 
 // Send a request
-tasks::net::http_sender<test_handler> sender;
-auto request = std::make_shared<tasks::net::http_request>("www.google.com", "/");
+http_sender<test_handler> sender;
+auto request = std::make_shared<http_request>("www.google.com", "/");
 sender.send(request);
 ```
 
 ### A thrift server (HTTP/uwsgi transport)
 
-Consider you want to write a service that looks up information for a given IP address. Look at the [ip_service_server!](examples/ip_service_server) example for the details like the thrift IDL.
+Consider you want to write a service that looks up information for a given IP address. Look at the [ip_service_server](examples/ip_service_server) example for the details like the thrift IDL.
 
 ```C++
+using namespace tasks;
+using namespace tasks::net;
+
 // We need a handler class that does the actual information lookup.
-class ip_service : public tasks::net::uwsgi_thrift_handler<IpServiceIf> {
+class ip_service : public uwsgi_thrift_handler<IpServiceIf> {
 public:
     void lookup(response_type& result, const int32_t ipv4, const ipv6_type& ipv6) {
         key_value_type kv;
@@ -77,8 +82,6 @@ public:
 };
 
 // Now we can setup the server
-using namespace tasks;
-using namespace tasks::net;
 acceptor<uwsgi_thrift_processor<IpServiceProcessor, ip_service> > srv(12345);
 dispatcher::instance()->run(1, &srv);
 ```
