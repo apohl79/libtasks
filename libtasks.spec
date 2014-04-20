@@ -1,7 +1,7 @@
 Name:           libtasks
-Version:        1.3
+Version:        1.4
 Release:        1%{?dist}
-Summary:        A simple task system written in C++11 that implements the leader/follower pattern and uses libev.
+Summary:        A simple task system written in modern C++ that implements the leader/followers pattern and uses libev as event loop.
 
 Group:          System Environment/Libraries
 License:        GNU GPL
