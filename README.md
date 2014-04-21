@@ -37,7 +37,7 @@ libtasks supports the [uwsgi protocol](http://uwsgi-docs.readthedocs.org/en/late
 Examples
 --------
 
-### A HTTP client
+### An HTTP client
 
 ```C++
 using namespace tasks::net;
