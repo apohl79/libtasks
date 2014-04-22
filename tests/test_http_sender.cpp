@@ -34,7 +34,7 @@ void test_http_sender::requests() {
     auto* sender = new tasks::net::http_sender<test_handler>();
 
     // Connect to remote
-    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 8080)));
+    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
 
     // Notify us when the tasks is finished
     sender->on_finish([this]{ m_cond.notify_one(); });
@@ -55,7 +55,7 @@ void test_http_sender::requests() {
 
     // Second run
     sender = new tasks::net::http_sender<test_handler>();
-    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 8080)));
+    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
     sender->on_finish([this]{ m_cond.notify_one(); });
     tasks::net_io_task::add_task(sender);
     m_cond.wait(lock);
