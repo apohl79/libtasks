@@ -4,7 +4,7 @@ libtasks
 Overview
 --------
 
-libtasks is a simple task system written in modern C++ that implements the leader/followers pattern and uses libev as event loop. It allows for writing event based applications. Network as well as disk IO operations are supported.
+libtasks is an I/O task system written in modern C++ that implements the Leader/Followers pattern and uses libev as event loop. It allows for writing event based applications. Network as well as disk I/O operations are supported.
 
 ### Leader/Followers Pattern
 
@@ -20,7 +20,7 @@ The figure below illustrates the states and the valid transitions in the Leader/
 Use cases
 ---------
 
-libtasks supports the [uwsgi protocol](http://uwsgi-docs.readthedocs.org/en/latest/Protocol.html). This protocol is supported by web servers like [nginx](http://nginx.org/) or [cherokee](http://cherokee-project.com/) to create high performance web applications.
+libtasks supports the [uwsgi protocol](http://uwsgi-docs.readthedocs.org/en/latest/Protocol.html) as well as [thrift](http://thrift.apache.org/). The uwsgi protocol is supported by web servers like [nginx](http://nginx.org/) or [cherokee](http://cherokee-project.com/) to create high performance web application backends.
 
 ### The following things are possible at the moment:
 
