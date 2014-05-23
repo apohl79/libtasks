@@ -104,7 +104,7 @@ void test_socket::udp() {
     int port = 22335;
     
     // create srv socket
-    tasks::net::socket* srv = new tasks::net::socket;
+    tasks::net::socket* srv = new tasks::net::socket(true);
     srv->set_blocking();
     srv->bind(port);
 
