@@ -109,7 +109,7 @@ void test_socket::udp() {
     srv->bind(port);
 
     // create client socket
-    tasks::net::socket clnt;
+    tasks::net::socket clnt(true);
     clnt.set_blocking();
 
     // read/write data
