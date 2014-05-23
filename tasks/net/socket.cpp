@@ -33,6 +33,15 @@
 namespace tasks {
 namespace net {
 
+socket::socket(bool udp) : m_udp(udp) {
+    if (m_udp) {
+        m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
+        assert(m_fd > 0);
+    } else {
+        m_fd = -1;
+    }
+}
+
 void socket::listen(std::string path, int queue_size) throw(socket_exception) {
     m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
     assert(m_fd > 0);

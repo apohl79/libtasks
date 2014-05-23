@@ -52,7 +52,8 @@ private:
 
 class socket {
 public:
-    socket(int fd = -1) : m_fd(fd) {}
+    socket(int fd) : m_fd(fd) {}
+    socket(bool udp = false);
     
     inline int fd() const {
         return m_fd;
