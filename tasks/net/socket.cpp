@@ -79,7 +79,7 @@ void socket::bind(int port, std::string ip) throw(socket_exception) {
 void socket::bind(int port, std::string ip, bool udp) throw(socket_exception) {
     int on = 1;
     m_udp = udp;
-    m_fd = ::socket(AF_INET, udp? SOCK_DGRAM: SOCK_STREAM, 0);
+    m_fd = ::socket(AF_INET, udp ? SOCK_DGRAM: SOCK_STREAM, 0);
     assert(m_fd > 0);
     if (setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on))) {
         throw socket_exception("setsockopt failed: " + std::string(std::strerror(errno)));
@@ -172,8 +172,7 @@ void socket::shutdown() {
     
 std::streamsize socket::write(const char* data, std::size_t len,
                               int port, std::string ip) throw(socket_exception) {
-    if (m_fd == -1) {
-        m_udp = true;
+    if (m_fd == -1 && m_udp) {
         m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
         assert(m_fd > 0);
     }
