@@ -33,12 +33,13 @@
 namespace tasks {
 namespace net {
 
-socket::socket(bool udp) : m_udp(udp) {
-    if (m_udp) {
+socket::socket(socket_type type) : m_fd(-1), m_type(type) {
+    if (UDP == m_type) {
         m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
         assert(m_fd > 0);
-    } else {
-        m_fd = -1;
+    } else if (TCP != m_type) {
+        terr("socket: Invalid socket_type! Using TCP.");
+        m_type = TCP;
     }
 }
 
@@ -63,7 +64,7 @@ void socket::listen(std::string path, int queue_size) throw(socket_exception) {
 }
 
 void socket::listen(int port, std::string ip, int queue_size) throw(socket_exception) {
-    if (m_udp) {
+    if (udp()) {
         throw socket_exception("listen failed: can't be called for UDP sockets");
     }
     bind(port, ip, false /* mark this object as tcp socket */);
@@ -78,7 +79,7 @@ void socket::bind(int port, std::string ip) throw(socket_exception) {
 
 void socket::bind(int port, std::string ip, bool udp) throw(socket_exception) {
     int on = 1;
-    m_udp = udp;
+    m_type = UDP;
     m_fd = ::socket(AF_INET, udp ? SOCK_DGRAM: SOCK_STREAM, 0);
     assert(m_fd > 0);
     if (setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on))) {
@@ -172,7 +173,7 @@ void socket::shutdown() {
     
 std::streamsize socket::write(const char* data, std::size_t len,
                               int port, std::string ip) throw(socket_exception) {
-    if (m_fd == -1 && m_udp) {
+    if (m_fd == -1 && udp()) {
         m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
         assert(m_fd > 0);
     }
@@ -197,7 +198,7 @@ std::streamsize socket::write(const char* data, std::size_t len,
 std::streamsize socket::read(char* data, std::size_t len) throw(socket_exception) {
     sockaddr* addr = nullptr;
     socklen_t addr_len = 0;
-    if (m_udp && nullptr != m_addr) {
+    if (udp() && nullptr != m_addr) {
         addr = (sockaddr*) m_addr.get();
         addr_len = sizeof(*addr);
     }

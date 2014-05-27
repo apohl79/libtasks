@@ -50,21 +50,30 @@ private:
     std::string m_what;
 };
 
+enum socket_type {
+    TCP,
+    UDP
+};
+
 class socket {
 public:
     socket(int fd) : m_fd(fd) {}
-    socket(bool udp = false);
+    socket(socket_type = TCP);
     
     inline int fd() const {
         return m_fd;
     }
 
     inline bool udp() const {
-        return m_udp;
+        return m_type == UDP;
     }
 
     inline bool tcp() const {
-        return !m_udp;
+        return m_type == TCP;
+    }
+
+    inline socket_type type() const {
+        return m_type;
     }
 
     inline std::shared_ptr<struct sockaddr_in> addr() {
@@ -102,7 +111,7 @@ public:
 
 private:
     int m_fd = -1;
-    bool m_udp = false;
+    socket_type m_type = TCP;
     bool m_blocking = false;
     std::shared_ptr<struct sockaddr_in> m_addr;
 
