@@ -31,10 +31,8 @@ public:
     inline void set_uwsgi_task(uwsgi_task* t) {
         m_uwsgi_task = t;
     }
-    
-private:
-    uwsgi_task* m_uwsgi_task = nullptr;
 
+protected:
     // Provide some wrappers to access the request and response structures
     // from a service call implementation.
     inline uwsgi_request& request() {
@@ -53,6 +51,8 @@ private:
         return m_uwsgi_task->response_p();
     }
 
+private:
+    uwsgi_task* m_uwsgi_task = nullptr;
 };
 
 } // net

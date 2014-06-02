@@ -36,6 +36,8 @@ namespace net {
         
 class uwsgi_request {
 public:
+    typedef std::unordered_map<std::string, std::string> uwsgi_vars_t;
+
     static std::string NO_VAL;
     
     uwsgi_request() {
@@ -48,6 +50,10 @@ public:
             return it->second;
         }
         return NO_VAL;
+    }
+
+    inline const uwsgi_vars_t& vars() const {
+        return m_vars;
     }
 
     inline void print_header() const {
@@ -97,7 +103,7 @@ private:
     tasks::tools::buffer m_data_buffer;
     tasks::tools::buffer m_content_buffer;
     io_state m_state = READY;
-    std::unordered_map<std::string, std::string> m_vars;
+    uwsgi_vars_t m_vars;
 
     bool read_header(socket& sock);
     bool read_vars(socket& sock);
