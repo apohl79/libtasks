@@ -51,7 +51,7 @@ extern std::mutex g_log_mutex;
           << m << std::flush;                                           \
     }
 
-#ifdef DEBUG
+#ifdef _DEBUG_OUTPUT
 #define tdbg(m) tlog(std::clog,m)
 #else
 #define tdbg(m)

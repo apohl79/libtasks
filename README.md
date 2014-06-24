@@ -34,6 +34,18 @@ libtasks supports the [uwsgi protocol](http://uwsgi-docs.readthedocs.org/en/late
 
 - Implement HTTP clients
 
+Building
+--------
+
+To build libtasks you will need cmake.
+
+### The following options are possible at the moment:
+
+- -DCMAKE_BUILD_TYPE=<type> - if type is "debug" the library will be build with debug logging enabled. Default is "release".
+- -DDISABLE_TESTS=<option>  - if option is "y" or "Y" the tests will not be build. Default is N.
+- -DWITH_EXAMPLES=<option>  - if option is "y" or "Y" the examples will be built too. Default is N.
+- -DWITH_PROFILER=<option>  - if option is "y" or "Y" the examples will be build with profiling support. Default is N.
+
 Examples
 --------
 

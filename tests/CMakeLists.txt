@@ -1,8 +1,6 @@
 project(libtasks-tests)
 cmake_minimum_required(VERSION 2.6)
 
-set(DEBUG 0)
-
 execute_process(COMMAND thrift --gen cpp -o ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/ipservice.thrift)
 execute_process(COMMAND rm -f ${PROJECT_BINARY_DIR}/gen-cpp/IpService_server.skeleton.cpp)
 
@@ -11,9 +9,9 @@ aux_source_directory(${PROJECT_BINARY_DIR}/gen-cpp SOURCES)
 
 add_definitions(-O4 -Wall -ggdb -std=c++11 -pthread)
 
-if(DEBUG EQUAL 1)
-    add_definitions(-DDEBUG -DLOGMUTEX)
-endif(DEBUG EQUAL 1)
+if(CMAKE_BUILD_TYPE MATCHES "debug")
+  add_definitions(-D_DEBUG_OUTPUT -DLOGMUTEX)
+endif(CMAKE_BUILD_TYPE MATCHES "debug")
 
 include_directories(${PROJECT_SOURCE_DIR}/../include ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/gen-cpp)
 

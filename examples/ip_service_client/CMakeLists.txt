@@ -1,9 +1,6 @@
 project(ip_service_client)
 cmake_minimum_required(VERSION 2.6)
 
-set(DEBUG 0)
-set(PROFILER 0)
-
 #add_compile_options(-O4 -ggdb -std=c++11 -pthread)
 add_definitions(-O4 -ggdb -std=c++11 -pthread)
 
@@ -21,11 +18,11 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} tasks ev thrift)
 
-if(DEBUG EQUAL 1)
-    add_definitions(-DDEBUG -DLOGMUTEX)
-endif(DEBUG EQUAL 1)
+if(CMAKE_BUILD_TYPE MATCHES "debug")
+  add_definitions(-D_DEBUG_OUTPUT -DLOGMUTEX)
+endif(CMAKE_BUILD_TYPE MATCHES "debug")
 
-if(PROFILER EQUAL 1)
-    add_definitions(-DPROFILER)
-    target_link_libraries(${PROJECT_NAME} profiler)
-endif(PROFILER EQUAL 1)
+if(WITH_PROFILER MATCHES "y" OR WITH_PROFILER MATCHES "Y")
+  add_definitions(-DPROFILER)
+  target_link_libraries(${PROJECT_NAME} profiler)
+endif(WITH_PROFILER MATCHES "y" OR WITH_PROFILER MATCHES "Y")
