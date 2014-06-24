@@ -52,7 +52,7 @@ extern std::mutex g_log_mutex;
     }
 
 #ifdef DEBUG
-#define tdbg(m) tlog(std::cout,m)
+#define tdbg(m) tlog(std::clog,m)
 #else
 #define tdbg(m)
 #endif
