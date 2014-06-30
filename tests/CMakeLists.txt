@@ -9,9 +9,9 @@ aux_source_directory(${PROJECT_BINARY_DIR}/gen-cpp SOURCES)
 
 add_definitions(-O4 -Wall -ggdb -std=c++11 -pthread)
 
-if(CMAKE_BUILD_TYPE MATCHES "debug")
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
   add_definitions(-D_DEBUG_OUTPUT -DLOGMUTEX)
-endif(CMAKE_BUILD_TYPE MATCHES "debug")
+endif(CMAKE_BUILD_TYPE MATCHES "Debug")
 
 include_directories(${PROJECT_SOURCE_DIR}/../include ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/gen-cpp)
 

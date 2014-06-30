@@ -14,9 +14,9 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} tasks ev)
 
-if(CMAKE_BUILD_TYPE MATCHES "debug")
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
   add_definitions(-D_DEBUG_OUTPUT -DLOGMUTEX)
-endif(CMAKE_BUILD_TYPE MATCHES "debug")
+endif(CMAKE_BUILD_TYPE MATCHES "Debug")
 
 if(WITH_PROFILER MATCHES "y" OR WITH_PROFILER MATCHES "Y")
   add_definitions(-DPROFILER)

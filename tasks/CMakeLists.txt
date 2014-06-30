@@ -19,9 +19,9 @@ endif()
 
 add_definitions(-DCACHE_LINE_SIZE=${CACHE_LINE_SIZE})
 
-if(CMAKE_BUILD_TYPE MATCHES "debug")
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
   add_definitions(-D_DEBUG_OUTPUT -DLOGMUTEX)
-endif(CMAKE_BUILD_TYPE MATCHES "debug")
+endif(CMAKE_BUILD_TYPE MATCHES "Debug")
 
 add_library(${PROJECT_NAME} SHARED ${TASKS_SRC})
 target_link_libraries(${PROJECT_NAME} -lpthread ev)
