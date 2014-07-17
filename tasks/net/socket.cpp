@@ -17,18 +17,18 @@
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sstream>
+#include <arpa/inet.h>
 #include <cassert>
 #include <cstring>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <netdb.h>
-
-#include <tasks/net/socket.h>
+#include <netinet/in.h>
+#include <sstream>
+#include <sys/stat.h>
+#include <sys/un.h>
 #include <tasks/logging.h>
+#include <tasks/net/socket.h>
+#include <unistd.h>
 
 namespace tasks {
 namespace net {
@@ -55,6 +55,9 @@ void socket::listen(std::string path, int queue_size) throw(socket_exception) {
     addr.sun_family = AF_UNIX;
     std::strcpy(addr.sun_path, path.c_str());
     unlink(addr.sun_path);
+    if (fchmod(m_fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) {
+        throw socket_exception("fchmod failed: " + std::string(std::strerror(errno)));
+    }
     if (::bind(m_fd, (struct sockaddr *) &addr, sizeof(addr.sun_family) + path.length())) {
         throw socket_exception("bind failed: " + std::string(std::strerror(errno)));
     }
