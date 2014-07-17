@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -51,15 +51,15 @@ void socket::listen(std::string path, int queue_size) throw(socket_exception) {
             throw socket_exception("fcntl failed: " + std::string(std::strerror(errno)));
         }
     }
-    if (fchmod(m_fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) {
-        throw socket_exception("fchmod failed: " + std::string(std::strerror(errno)));
-    }
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     std::strcpy(addr.sun_path, path.c_str());
     unlink(addr.sun_path);
     if (::bind(m_fd, (struct sockaddr *) &addr, sizeof(addr.sun_family) + path.length())) {
         throw socket_exception("bind failed: " + std::string(std::strerror(errno)));
+    }
+    if (chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) {
+        throw socket_exception("chmod failed: " + std::string(std::strerror(errno)));
     }
     if (::listen(m_fd, queue_size) != 0) {
         throw socket_exception("listen failed: " + std::string(std::strerror(errno)));
@@ -107,7 +107,7 @@ void socket::init_sockaddr(int port, std::string ip) {
     m_addr->sin_family = AF_INET;
     if (ip.length()) {
         if (inet_pton(AF_INET, ip.c_str(), &(m_addr->sin_addr)) < 1) {
-            terr("socket: Invalid ip " << ip << "! Binding to 0.0.0.0!" << std::endl); 
+            terr("socket: Invalid ip " << ip << "! Binding to 0.0.0.0!" << std::endl);
             m_addr->sin_addr.s_addr = INADDR_ANY;
         }
     } else {
@@ -173,7 +173,7 @@ void socket::close() {
 void socket::shutdown() {
     ::shutdown(m_fd, SHUT_RDWR);
 }
-    
+
 std::streamsize socket::write(const char* data, std::size_t len,
                               int port, std::string ip) throw(socket_exception) {
     if (m_fd == -1 && udp()) {
