@@ -51,13 +51,13 @@ void socket::listen(std::string path, int queue_size) throw(socket_exception) {
             throw socket_exception("fcntl failed: " + std::string(std::strerror(errno)));
         }
     }
+    if (fchmod(m_fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) {
+        throw socket_exception("fchmod failed: " + std::string(std::strerror(errno)));
+    }
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     std::strcpy(addr.sun_path, path.c_str());
     unlink(addr.sun_path);
-    if (fchmod(m_fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) {
-        throw socket_exception("fchmod failed: " + std::string(std::strerror(errno)));
-    }
     if (::bind(m_fd, (struct sockaddr *) &addr, sizeof(addr.sun_family) + path.length())) {
         throw socket_exception("bind failed: " + std::string(std::strerror(errno)));
     }
