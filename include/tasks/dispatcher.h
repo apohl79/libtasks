@@ -108,6 +108,7 @@ private:
 
     // State of the workers
     tools::bitset m_workers_busy;
+    tools::bitset::int_type m_last_worker_id = 0;
 
     // Condition variable/mutex used to wait for finishing up 
     std::condition_variable m_finish_cond;

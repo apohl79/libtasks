@@ -23,7 +23,7 @@
 #include <atomic>
 #include <vector>
 #include <sstream> // for to_string
-#include <bitset>  // for to_string
+#include <cassert>
 
 namespace tasks {
 namespace tools {
@@ -33,39 +33,52 @@ namespace tools {
  */
 class bitset {    
 public:
-    typedef uint16_t int_type;
+    typedef uint64_t int_type;
     typedef std::atomic<int_type> data_type;
-    static constexpr int int_size = sizeof(int_type);
-    static constexpr int bits_count = int_size * 8;
+    static constexpr int_type int_size = sizeof(int_type);
+    static constexpr int_type bits_count = int_size * 8;
 
-    bitset(int_type bits = 16)
+    bitset(int_type bits = bits_count)
         : m_bitset(std::vector<data_type>(bits % bits_count?
                                           bits / bits_count + 1:
-                                          bits / bits_count)) {}
+                                          bits / bits_count)),
+          m_bits(bits) {}
+
+    inline int_type bits() const {
+        return m_bits;
+    }
+
+    inline size_t buckets() const {
+        return m_bitset.size();
+    }
 
     inline void toggle(int_type p) {
+        assert(p < m_bits);
         int_type idx = p/bits_count;
-        int_type bit = 1 << p%bits_count;
+        int_type bit = int_type(1) << p%bits_count;
         m_bitset[idx] ^= bit;
     }
 
     inline void set(int_type p) {
+        assert(p < m_bits);
         int_type idx = p/bits_count;
-        int_type bit = 1 << p%bits_count;
+        int_type bit = int_type(1) << p%bits_count;
         m_bitset[idx] |= bit;
     }
 
     inline void unset(int_type p) {
+        assert(p < m_bits);
         int_type idx = p/bits_count;
-        int_type bit = 1 << p%bits_count;
+        int_type bit = int_type(1) << p%bits_count;
         if (m_bitset[idx] & bit) {
             m_bitset[idx] ^= bit;
         }
     }
 
-    inline bool test(int_type p) {
+    inline bool test(int_type p) const {
+        assert(p < m_bits);
         int_type idx = p/bits_count;
-        int_type bit = 1 << p%bits_count;
+        int_type bit = int_type(1) << p%bits_count;
         return m_bitset[idx] & bit;
     }
 
@@ -83,13 +96,13 @@ public:
         return false;
     }
 
-    // Returns true if a was bit found. The index of the first bit is stored to idx.
+    // Returns true if a set bit was found. The index of the first bit is stored to idx.
     inline bool first(int_type& idx) const {
         int_type bs;
         int_type offset;
         if (any(bs, offset)) {
-            for (int_type p = 0;; p++) {
-                int_type bit = 1 << p;
+            for (int_type p = 0; p + offset < m_bits; p++) {
+                int_type bit = int_type(1) << p;
                 if (bs & bit) {
                     idx = p + offset;
                     return true;
@@ -98,17 +111,43 @@ public:
         }
         return false;
     }
+
+    // Returns true if a set bit was found. The index of the first bit is stored to idx.
+    // Uses start as starting point to search. The full bitset will be searched as
+    // worst case.
+    inline bool next(int_type& idx, int_type start = 0) const {
+        assert(start < m_bits);
+        int_type chk_idx = start;
+        int_type chk_cnt = 0;
+        do {
+            if (test(chk_idx)) {
+                idx = chk_idx;
+                return true;
+            }
+            chk_idx++;
+            // overflow check
+            if (chk_idx == m_bits) {
+                chk_idx = 0;
+            }
+            chk_cnt++;
+        } while (chk_cnt < m_bits);
+        return false;
+    }
     
     std::string to_string() {
         std::stringstream out;
-        for (auto& bs : m_bitset) {
-            out << std::bitset<bits_count>(bs) << " ";
+        for (int_type i = 0; i < m_bits; i++) {
+            out << (test(i)? "1": "0");
+            if (((i + 1) % bits_count) == 0) {
+                out << " ";
+            }
         }
         return out.str();
     }
     
 private:
     std::vector<data_type> m_bitset;
+    int_type m_bits;
 };
 
 } // tools

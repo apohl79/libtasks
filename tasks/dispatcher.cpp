@@ -122,7 +122,8 @@ void dispatcher::join() {
 std::shared_ptr<worker> dispatcher::free_worker() {
     if (m_num_workers > 1) {
         tools::bitset::int_type id;
-        if (m_workers_busy.first(id)) {
+        if (m_workers_busy.next(id, m_last_worker_id)) {
+            m_last_worker_id = id;
             tdbg("dispatcher: free_worker(" << id << ")" << std::endl);
             m_workers_busy.unset(id);
             return m_workers[id];
