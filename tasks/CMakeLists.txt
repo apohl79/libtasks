@@ -1,5 +1,14 @@
 project(tasks)
 cmake_minimum_required(VERSION 2.6)
+get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+if(LIB64)
+  set(LIB_SUFFIX 64)
+else()
+  set(LIB_SUFFIX "")
+endif()
+
+set(INSTALL_LIB_DIR lib${LIB_SUFFIX} CACHE PATH "Installation directory for libraries")
+mark_as_advanced(INSTALL_LIB_DIR)
 
 aux_source_directory(. TASKS_SRC)
 aux_source_directory(tools TASKS_SRC)
@@ -26,4 +35,4 @@ endif(CMAKE_BUILD_TYPE MATCHES "Debug")
 add_library(${PROJECT_NAME} SHARED ${TASKS_SRC})
 target_link_libraries(${PROJECT_NAME} -lpthread ev)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION lib64)
+install(TARGETS ${PROJECT_NAME} DESTINATION ${INSTALL_LIB_DIR})
