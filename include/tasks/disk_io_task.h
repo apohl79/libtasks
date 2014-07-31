@@ -46,6 +46,7 @@ public:
     }
 
     virtual bool handle_event(worker* worker, int events);
+    virtual void init_watcher() {}
     virtual void start_watcher(worker* worker) {}
     virtual void stop_watcher(worker* worker) {}
 

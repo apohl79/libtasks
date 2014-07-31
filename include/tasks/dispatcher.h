@@ -29,6 +29,7 @@
 
 #include <tasks/ev_wrapper.h>
 #include <tasks/tools/bitset.h>
+#include <tasks/logging.h>
 
 namespace tasks {
         
@@ -39,6 +40,11 @@ struct signal_data;
     
 class dispatcher {
 public:
+    enum class mode {
+        SINGLE_LOOP,
+        MULTI_LOOP
+    };
+
     dispatcher(uint8_t num_workers);
 
     // Use this method to override the number of worker threads. The default is the
@@ -48,6 +54,31 @@ public:
         if (nullptr == m_instance) {
             m_instance = std::make_shared<dispatcher>(num_workers);
         }
+    }
+
+    // Set the run mode.
+    // The default is to run a leader/followers system (MODE_SINGLE_LOOP) in
+    // which only one event loop exists that is passed from worker to worker. An
+    // alternative is to run an event loop in each worker (MODE_MULTI_LOOP). This can
+    // improve the responsiveness and throughput in some situations.
+    //
+    // Note: This method has to be called before creating the dispatcher singleton.
+    //       It will fail when called later.
+    //
+    // Available Modes:
+    //   SINGLE_LOOP (Default)
+    //   MULTI_LOOP
+    static void init_run_mode(mode m) {
+        if (nullptr != m_instance) {
+            terr("ERROR: dispatcher::init_run_mode must be called before anything else!"
+                 << std::endl);
+            assert(false);
+        }
+        m_run_mode = m;
+    }
+
+    static mode run_mode() {
+        return m_run_mode;
     }
 
     static std::shared_ptr<dispatcher> instance() {
@@ -75,14 +106,18 @@ public:
     // When a worker finishes his work he returns to the free worker queue.
     void add_free_worker(uint8_t id);
 
-    // Returns the first worker from the workers vector. This can be useful
+    // Returns the last promoted worker from the workers vector. This can be useful
     // to add tasks in situations where a worker handle is not available.
-    inline worker* first_worker() {
-        return m_workers[0].get();
+    inline worker* last_worker() {
+        return m_workers[m_last_worker_id].get();
     }
-        
-    // This method starts the system and blocks until terminate() gets called.
+
+    // Add a task to the system.
+    void add_task(task* task);
+
+    // This methods start the system and block until terminate() gets called.
     void run(int num, ...);
+    void run(std::vector<tasks::task*>& tasks);
 
     // Start the event loop. Do not block.
     void start();
@@ -106,19 +141,22 @@ private:
     std::vector<std::shared_ptr<worker> > m_workers;
     uint8_t m_num_workers = 0;
 
-    // State of the workers
+    static mode m_run_mode;
+
+    // State of the workers used for maintaining the leader/followers
     tools::bitset m_workers_busy;
     tools::bitset::int_type m_last_worker_id = 0;
+
+    // A round robin counter to add tasks to the system. In case each
+    // worker runs it's own event loop this is useful to distribute tasks
+    // across the workers.
+    std::atomic<uint8_t> m_rr_worker_id;
 
     // Condition variable/mutex used to wait for finishing up 
     std::condition_variable m_finish_cond;
     std::mutex m_finish_mutex;
 
     ev_signal m_signal;
-    
-    // Helper to start initial tasks
-    bool start_net_io_task(task* task);
-    bool start_timer_task(task* task);
 };
 
 } // tasks

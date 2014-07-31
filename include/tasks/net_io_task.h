@@ -21,6 +21,7 @@
 #define _TASKS_NET_IO_TASK_H_
 
 #include <tasks/task.h>
+#include <tasks/worker.h>
 #include <tasks/net/socket.h>
 #include <tasks/ev_wrapper.h>
 #include <memory>
@@ -54,12 +55,15 @@ public:
         return m_io.get();
     }
 
-    inline void init_watcher() {
+    void init_watcher() {
         ev_io_set(m_io.get(), m_socket.fd(), m_events);
     }
 
+    // Start a watcher in the context of the given worker
     void start_watcher(worker* worker);
+    // Stop a watcher in the context of the given worker
     void stop_watcher(worker* worker);
+    // Udate a watcher in the context of the given worker
     void update_watcher(worker* worker);
 
     virtual void dispose(worker* worker = nullptr);

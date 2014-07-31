@@ -22,12 +22,25 @@
 
 namespace tasks {
 
-worker::worker(uint8_t id) : m_id(id), m_term(false), m_leader(false),
-                             m_thread(&worker::run, this) {
+thread_local worker* worker::m_worker_ptr = nullptr;
+
+worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop)
+        : m_id(id), m_term(false), m_leader(false), m_thread(&worker::run, this) {
     // Initialize and add the threads async watcher
     ev_async_init(&m_signal_watcher, tasks_async_callback);
     m_signal_watcher.data = new task_func_queue;
-    ev_async_start(ev_default_loop(0), &m_signal_watcher);
+
+    assert(dispatcher::mode::SINGLE_LOOP == dispatcher::run_mode() || nullptr != loop);
+    struct ev_loop* loop_raw = nullptr;
+    if (nullptr != loop) {
+        m_loop = std::move(loop);
+        m_leader = true;
+        ev_set_userdata(m_loop->ptr, this);
+        loop_raw = m_loop->ptr;
+    } else {
+        loop_raw = ev_default_loop(0);
+    }
+    ev_async_start(loop_raw, &m_signal_watcher);
 }
 
 worker::~worker() {
@@ -37,6 +50,8 @@ worker::~worker() {
 }
 
 void worker::run() {
+    m_worker_ptr = this;
+
     // Wait for a short while before entering the loop to allow
     // the dispatcher to finish its initialization.
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -61,7 +76,9 @@ void worker::run() {
                 tdbg(get_string() << ": executing events" << std::endl);
                 // Now promote the next leader and call the event
                 // handlers
-                promote_leader();
+                if (dispatcher::mode::SINGLE_LOOP == dispatcher::run_mode()) {
+                    promote_leader();
+                }
                 // Handle events
                 while (!m_events_queue.empty()) {
                     m_events_count++;
@@ -82,12 +99,12 @@ void worker::run() {
 
         if (!m_term) {
             // Mark this worker as available worker
-            dispatcher::instance()->add_free_worker(id());
+            if (dispatcher::mode::SINGLE_LOOP == dispatcher::run_mode()) {
+                dispatcher::instance()->add_free_worker(id());
+            }
         } else {
             // Shutdown, the leader terminates the loop
             if (m_leader) {
-                // FIXME: Iterate over all watchers and delete
-                // registered tasks.
                 ev_unloop(m_loop->ptr, EVUNLOOP_ALL);
             }
         }

@@ -33,6 +33,11 @@
 #include <queue>
 #include <sstream>
 #include <cassert>
+#include <vector>
+
+// To enable worker::add_time() set this to 1.
+#define ENABLE_ADD_TIME 0
+#define ADD_TIME_BUCKETS 10
 
 namespace tasks {
 
@@ -41,6 +46,8 @@ class task;
 // Needed to use std::unique_ptr<>
 struct loop_t {
     struct ev_loop* ptr;
+    loop_t() : ptr(nullptr) {}
+    loop_t(struct ev_loop* p) : ptr(p) {}
 };
 
 // Signals to enter the leader thread context
@@ -62,11 +69,16 @@ struct event {
         
 class worker {
 public:
-    worker(uint8_t id);
+    worker(uint8_t id, std::unique_ptr<loop_t>& loop);
     virtual ~worker();
 
     inline uint8_t id() const {
         return m_id;
+    }
+    
+    // Provide access to the executing worker thread
+    static worker* get() {
+        return m_worker_ptr;
     }
 
     inline std::string get_string() const {
@@ -75,12 +87,26 @@ public:
         return os.str();
     }
 
+    inline struct ev_loop* loop_ptr() const {
+        struct ev_loop* loop = nullptr;
+        switch (dispatcher::run_mode()) {
+        case dispatcher::mode::MULTI_LOOP:
+            assert(nullptr != m_loop);
+            loop = m_loop->ptr;
+            break;
+        default:
+            loop = ev_default_loop(0);
+        }
+        return loop;
+    }
+
     // Executes task_func directly if called in leader thread
     // context or delegates it. Returns true when task_func has
     // been executed.
     inline bool signal_call(task_func f) {
-        if (m_leader) {
-            // The worker is the leader, now execute the functor
+        if (m_leader && this == worker::get()) {
+            // The worker is running an event loop and we are running in the workers thread context,
+            // now execute the functor
             f(m_loop->ptr);
             return true;
         } else {
@@ -92,11 +118,11 @@ public:
     inline void async_call(task_func f) {
         task_func_queue* tfq = (task_func_queue*) m_signal_watcher.data;
         std::lock_guard<std::mutex> lock(tfq->mutex);
-        tfq->queue.push(f);
-        ev_async_send(ev_default_loop(0), &m_signal_watcher);
+        tfq->queue.push(f);   
+        ev_async_send(loop_ptr(), &m_signal_watcher);
     }
 
-    inline void set_event_loop(std::unique_ptr<loop_t> loop) {
+    inline void set_event_loop(std::unique_ptr<loop_t>& loop) {
         m_loop = std::move(loop);
         m_leader = true;
         ev_set_userdata(m_loop->ptr, this);
@@ -109,7 +135,7 @@ public:
         m_work_cond.notify_one();
         if (m_leader) {
             // interrupt the event loop
-            ev_async_send(ev_default_loop(0), &m_signal_watcher);
+            ev_async_send(loop_ptr(), &m_signal_watcher);
         }
         m_thread.join();
         tdbg(get_string() << ": thread done" << std::endl);
@@ -120,7 +146,7 @@ public:
     }
 
     static void add_async_event(event e) {
-        dispatcher::instance()->first_worker()->async_call([e] (struct ev_loop* loop) {
+        dispatcher::instance()->last_worker()->async_call([e] (struct ev_loop* loop) {
                 // get the executing worker
                 worker* worker = (tasks::worker*) ev_userdata(loop);
                 worker->add_event(e);
@@ -133,8 +159,37 @@ public:
     inline uint64_t events_count() const {
         return m_events_count;
     }
+
+#if ENABLE_ADD_TIME == 1
+    // If you need some internal time measurements local to the worker threads, you can
+    // enable this method and drop times in microseconds into this. An average value will
+    // be printed to STDOUT for every 5000 measures.
+    //
+    // Example:
+    //
+    // Measure the time it takes to handle some request:
+    //
+    //   auto s = std::chrono::high_resolution_clock::now();
+    //   success = handle_request();
+    //   auto e = std::chrono::high_resolution_clock::now();
+    //   uint64_t delta = std::chrono::duration_cast<std::chrono::microseconds>(e - s).count();
+    //   worker->add_time(0, delta);
+    //
+    inline void add_time(uint64_t idx, uint64_t t) {
+        m_time_total[idx] += t;
+        m_time_count[idx]++;
+        if (m_time_count[idx] == 5000) {
+            std::cout << get_string() << " time(" << idx << "): avg "
+                      << (double) m_time_total[idx] / 5000 << " micros"
+                      << std::endl;
+            m_time_total[idx] = 0;
+            m_time_count[idx] = 0;
+        }
+    }
+#endif
         
 private:
+    thread_local static worker* m_worker_ptr;
     uint8_t m_id;
     uint64_t m_events_count = 0;
     std::unique_ptr<loop_t> m_loop;
@@ -144,6 +199,11 @@ private:
     std::mutex m_work_mutex;
     std::condition_variable m_work_cond;
     std::queue<event> m_events_queue;
+
+#if ENABLE_ADD_TIME == 1
+    uint64_t m_time_total[ADD_TIME_BUCKETS];
+    uint64_t m_time_count[ADD_TIME_BUCKETS];
+#endif
 
     // Every worker has an async watcher to be able to call
     // into the leader thread context.
@@ -155,7 +215,7 @@ private:
             // If we find a free worker, we promote it to the next
             // leader. This thread stays leader otherwise.
             m_leader = false;
-            w->set_event_loop(std::move(m_loop));
+            w->set_event_loop(m_loop);
         }
     }
 
