@@ -18,6 +18,7 @@
  */
 
 #include <arpa/inet.h>
+#include <csignal>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/THttpClient.h>
 #include <boost/shared_ptr.hpp>
