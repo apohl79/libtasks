@@ -18,6 +18,7 @@
  */
 
 #include <arpa/inet.h>
+#include <csignal>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/THttpClient.h>
 #include <boost/shared_ptr.hpp>
@@ -58,7 +59,7 @@ void test_uwsgi_thrift::request() {
 
     using namespace apache::thrift::protocol;
     using namespace apache::thrift::transport;
-    boost::shared_ptr<THttpClient> transport(new THttpClient("localhost", 18080, "/"));
+    boost::shared_ptr<THttpClient> transport(new THttpClient("127.0.0.1", 18080, "/"));
     boost::shared_ptr<TBinaryProtocol> protocol(new TBinaryProtocol(transport));
     IpServiceClient client(protocol);
 

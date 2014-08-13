@@ -38,6 +38,8 @@
 
 #include <tasks/dispatcher.h>
 
+#include <string>
+
 CPPUNIT_TEST_SUITE_REGISTRATION(test_http_sender);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_disk_io_task);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_socket);
@@ -46,6 +48,10 @@ CPPUNIT_TEST_SUITE_REGISTRATION(test_uwsgi_thrift_async);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_bitset);
 
 int main(int argc, char** argv) {
+    if (argc > 1 && std::string(argv[1]) == "multi") {
+        tasks::dispatcher::init_run_mode(tasks::dispatcher::mode::MULTI_LOOP);
+    }
+    tasks::dispatcher::init_workers(4);
     tasks::dispatcher::instance()->start();
 
     // informs test-listener about testresults

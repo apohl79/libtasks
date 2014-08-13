@@ -66,6 +66,18 @@ public:
             net::socket client = socket().accept();
             tdbg("acceptor: new client fd " << client.fd() << std::endl);
             T* task = new T(client);
+            // Note: Calling net_io_tasks::add_task will add the client fd to the event loop
+            //       from the context of the current worker thread. If you are using multi
+            //       loop mode this meams a client fd will always be added to the same event
+            //       loop as the server socket and won't be handled by other threads. If you
+            //       run only one acceptor you will effectively running single threaded. But
+            //       this can be very usefull if you are running one acceptor per worker.
+            //       If you need to distribute client fd's accross your workers you should
+            //       implement you own acceptor and use
+            //
+            //         dispatcher::instance()->add_task(task);
+            //
+            //       instead.
             add_task(worker, task);
         } catch (socket_exception& e) {
             terr("acceptor: " << e.what() << std::endl);

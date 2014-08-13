@@ -25,10 +25,8 @@ namespace net {
 
 bool uwsgi_task::handle_event(tasks::worker* worker, int revents) {
     bool success = true;
-    // Remember the worker for this event call, needed for send_response()
-    m_worker = worker;
     if (EV_READ & revents) {
-            if (m_request.read_data(socket())) {
+        if (m_request.read_data(socket())) {
             if (m_request.done()) {
                 if (UWSGI_VARS == m_request.header().modifier1) {
                     success = handle_request();
@@ -59,7 +57,6 @@ bool uwsgi_task::handle_event(tasks::worker* worker, int revents) {
             success = false;
         }
     }
-    m_worker = nullptr;
     return success;
 }
 

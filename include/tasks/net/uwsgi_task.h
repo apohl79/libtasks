@@ -64,16 +64,15 @@ public:
     }
 
     inline void send_response() {
-        assert(nullptr != m_worker);
+        worker* w = worker::get();
+        assert(nullptr != w);
         set_events(EV_WRITE);
-        update_watcher(m_worker);
+        update_watcher(w);
     }
 
 private:
     uwsgi_request m_request;
     http_response m_response;
-    // temporary handle to the current worker
-    tasks::worker* m_worker = nullptr;
 
     inline void finish_request() {
         m_request.clear();

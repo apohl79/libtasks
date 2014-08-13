@@ -65,11 +65,11 @@ void net_io_task::set_events(int events) {
 
 void net_io_task::start_watcher(worker* worker) {
     worker->signal_call([this] (struct ev_loop* loop) {
-            if (!ev_is_active(m_io.get())) {
-                tdbg(get_string() << ": starting watcher" << std::endl);
-                ev_io_start(loop, m_io.get());
-            }
-        });
+        if (!ev_is_active(m_io.get())) {
+            tdbg(get_string() << ": starting watcher" << std::endl);
+            ev_io_start(loop, m_io.get());
+        }
+    });
 }
 
 void net_io_task::stop_watcher(worker* worker) {
@@ -107,16 +107,12 @@ void net_io_task::add_task(worker* worker, net_io_task* task) {
 }
 
 void net_io_task::add_task(net_io_task* task) {
-    dispatcher::instance()->first_worker()->async_call([task] (struct ev_loop* loop) {
-            tdbg(task->get_string() << ": adding net_io_task" << std::endl);
-            task->init_watcher();
-            ev_io_start(loop, task->watcher());
-        });
+    dispatcher::instance()->add_task(task);
 }
 
 void net_io_task::dispose(worker* worker) {
     if (nullptr == worker) {
-        worker = dispatcher::instance()->first_worker();
+        worker = dispatcher::instance()->last_worker();
     }
     worker->signal_call([this] (struct ev_loop* loop) {
             tdbg(get_string() << ": disposing net_io_task" << std::endl);

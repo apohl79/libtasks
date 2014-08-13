@@ -30,6 +30,7 @@
 namespace tasks {
 
 std::shared_ptr<dispatcher> dispatcher::m_instance = nullptr;
+dispatcher::mode dispatcher::m_run_mode = mode::SINGLE_LOOP;
     
 static void handle_signal(struct ev_loop* loop, ev_signal* sig, int revents) {
     dispatcher* d = (dispatcher*) sig->data;
@@ -40,14 +41,25 @@ static void handle_signal(struct ev_loop* loop, ev_signal* sig, int revents) {
 dispatcher::dispatcher(uint8_t num_workers)
     : m_term(false),
       m_num_workers(num_workers),
-      m_workers_busy(tools::bitset(m_num_workers)) {
+      m_workers_busy(tools::bitset(m_num_workers)),
+      m_rr_worker_id(0) {
     // Initialize the event loop structure
-    ev_default_loop(0);
+    struct ev_loop* loop_raw = ev_default_loop(0);
     // Create workers 
     tdbg("dispatcher: number of cpus is " << (int) m_num_workers << std::endl);
-    // The first thread becomes the leader
+    // The first thread becomes the leader or each thread gets its own loop
     for (uint8_t i = 0; i < m_num_workers; i++) {
-        std::shared_ptr<worker> w = std::make_shared<worker>(i);
+        std::unique_ptr<loop_t> loop = nullptr;
+        if (mode::MULTI_LOOP == m_run_mode) {
+            if (nullptr == loop_raw) {
+                loop_raw = ev_loop_new(0);
+            }
+            assert(loop_raw != nullptr);
+            loop.reset(new loop_t(loop_raw));
+            // Force the next iteration to create a new loop struct.
+            loop_raw = nullptr;
+        }
+        std::shared_ptr<worker> w = std::make_shared<worker>(i, loop);
         assert(nullptr != w);
         m_workers.push_back(w);
         m_workers_busy.set(i);
@@ -58,27 +70,6 @@ dispatcher::dispatcher(uint8_t num_workers)
     ev_signal_start(ev_default_loop(0), &m_signal);
 }
 
-bool dispatcher::start_net_io_task(task* task) {
-    bool success = false;
-    net_io_task* net_io_task = dynamic_cast<tasks::net_io_task*>(task);
-    if (nullptr != net_io_task) {
-        net_io_task->init_watcher();
-        ev_io_start(ev_default_loop(0), net_io_task->watcher());
-        success = true;
-    }
-    return success;
-}
-
-bool dispatcher::start_timer_task(task* task) {
-    bool success = false;
-    timer_task* timer_task = dynamic_cast<tasks::timer_task*>(task);
-    if (nullptr != timer_task) {
-        ev_timer_start(ev_default_loop(0), timer_task->watcher());
-        success = true;
-    }
-    return success;
-}
-
 void dispatcher::run(int num, ...) {
     // Start tasks if passed
     if (num > 0) {
@@ -86,9 +77,7 @@ void dispatcher::run(int num, ...) {
         va_start(tasks, num);
         for (int i = 0; i < num; i++) {
             tasks::task* t = va_arg(tasks, tasks::task*);
-            // Try to find a proper task specialization and start a watcher
-            bool started = start_net_io_task(t);
-            if (!started) started = start_timer_task(t);
+            add_task(t);
         }
         va_end(tasks);
     }
@@ -100,12 +89,26 @@ void dispatcher::run(int num, ...) {
     join();
 }
 
+void dispatcher::run(std::vector<tasks::task*>& tasks) {
+    for (auto t : tasks) {
+        add_task(t);
+    }
+    
+    // Start the event loop
+    start();
+    
+    // Now we park this thread until someone calls finish()
+    join();
+}
+
 void dispatcher::start() {
-    // Create an event loop and pass it to a worker
-    std::unique_ptr<loop_t> loop(new loop_t);
-    loop->ptr = ev_default_loop(0);
-    m_workers_busy.unset(0);
-    m_workers[0]->set_event_loop(std::move(loop));
+    if (mode::SINGLE_LOOP == m_run_mode) {
+        // Create an event loop and pass it to a worker
+        std::unique_ptr<loop_t> loop(new loop_t);
+        loop->ptr = ev_default_loop(0);
+        m_workers_busy.unset(0);
+        m_workers[0]->set_event_loop(loop);
+    }
 }
 
 void dispatcher::join() {
@@ -141,6 +144,25 @@ void dispatcher::print_worker_stats() const {
     for (auto &w: m_workers) {
         terr(w->get_string() << ": number of handled events is " << w->events_count() << std::endl);
     }
+}
+
+void dispatcher::add_task(task* task) {
+    worker* worker = nullptr;
+    switch (m_run_mode) {
+    case mode::MULTI_LOOP:
+        // In multi loop mode we pick a worker by round robin
+        worker = m_workers[m_rr_worker_id++ % m_num_workers].get();
+        break;
+    default:
+        // In single loop mode use the current worker
+        worker = worker::get();
+        // If we get called from some other thread than a worker we pick the last active worker
+        if (nullptr == worker) {
+            worker = m_workers[m_last_worker_id].get();
+        }
+    }
+    task->init_watcher();
+    task->start_watcher(worker);
 }
 
 } // tasks

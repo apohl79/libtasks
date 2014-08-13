@@ -17,7 +17,10 @@ endif(WITH_EXAMPLES MATCHES "y" OR WITH_EXAMPLES MATCHES "Y")
 if(NOT(DISABLE_TESTS MATCHES "y" OR DISABLE_TESTS MATCHES "Y"))
   add_subdirectory(tests)
   enable_testing()
-  add_test(NAME UnitTests
+  add_test(NAME UnitTests_single_loop
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests
-    COMMAND ${PROJECT_SOURCE_DIR}/tests/runtests.sh ./libtasks-tests ${PROJECT_SOURCE_DIR}/tests)
+    COMMAND ${PROJECT_SOURCE_DIR}/tests/runtests.sh ./libtasks-tests ${PROJECT_SOURCE_DIR}/tests single)
+  add_test(NAME UnitTests_multi_loop
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests
+    COMMAND ${PROJECT_SOURCE_DIR}/tests/runtests.sh ./libtasks-tests ${PROJECT_SOURCE_DIR}/tests multi)
 endif(NOT(DISABLE_TESTS MATCHES "y" OR DISABLE_TESTS MATCHES "Y"))
