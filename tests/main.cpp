@@ -33,6 +33,7 @@
 #include "test_disk_io_task.h"
 #include "test_socket.h"
 #include "test_uwsgi_thrift.h"
+#include "test_uwsgi_thrift_async.h"
 #include "test_bitset.h"
 
 #include <tasks/dispatcher.h>
@@ -43,6 +44,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(test_http_sender);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_disk_io_task);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_socket);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_uwsgi_thrift);
+CPPUNIT_TEST_SUITE_REGISTRATION(test_uwsgi_thrift_async);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_bitset);
 
 int main(int argc, char** argv) {
