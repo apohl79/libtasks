@@ -70,7 +70,7 @@ public:
         update_watcher(w);
     }
 
-private:
+protected:
     uwsgi_request m_request;
     http_response m_response;
 
