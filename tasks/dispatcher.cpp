@@ -32,7 +32,7 @@ namespace tasks {
 std::shared_ptr<dispatcher> dispatcher::m_instance = nullptr;
 dispatcher::mode dispatcher::m_run_mode = mode::SINGLE_LOOP;
     
-static void handle_signal(struct ev_loop* loop, ev_signal* sig, int revents) {
+static void handle_signal(struct ev_loop* /* loop */ , ev_signal* sig, int /* revents */) {
     dispatcher* d = (dispatcher*) sig->data;
     assert(nullptr != d);
     d->terminate();

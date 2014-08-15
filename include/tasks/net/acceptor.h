@@ -61,7 +61,7 @@ public:
         socket().shutdown();
     }
 
-    bool handle_event(worker* worker, int revents)  {
+    bool handle_event(worker* worker, int /* revents */)  {
         try {
             net::socket client = socket().accept();
             tdbg("acceptor: new client fd " << client.fd() << std::endl);

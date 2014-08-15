@@ -1,6 +1,10 @@
 project(libtasks-root)
 cmake_minimum_required(VERSION 2.6)
 
+if(NOT DEFINED CMAKE_MACOSX_RPATH)
+  set(CMAKE_MACOSX_RPATH 0)
+endif()
+
 file(GLOB tasks_headers "include/tasks/*.h")
 file(GLOB net_headers "include/tasks/net/*.h")
 file(GLOB tools_headers "include/tasks/tools/*.h")

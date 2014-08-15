@@ -23,7 +23,7 @@
 namespace tasks {
 namespace net {
 
-bool uwsgi_task::handle_event(tasks::worker* worker, int revents) {
+bool uwsgi_task::handle_event(tasks::worker* /* worker */, int revents) {
     bool success = true;
     if (EV_READ & revents) {
         if (m_request.read_data(socket())) {

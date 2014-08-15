@@ -55,9 +55,15 @@ void socket::listen(std::string path, int queue_size) throw(socket_exception) {
     addr.sun_family = AF_UNIX;
     std::strcpy(addr.sun_path, path.c_str());
     unlink(addr.sun_path);
+#ifndef _OS_DARWIN_
     if (::bind(m_fd, (struct sockaddr *) &addr, sizeof(addr.sun_family) + path.length())) {
         throw socket_exception("bind failed: " + std::string(std::strerror(errno)));
     }
+#else
+    if (::bind(m_fd, (struct sockaddr *) &addr, SUN_LEN(&addr))) {
+        throw socket_exception("bind failed: " + std::string(std::strerror(errno)));
+    }
+#endif
     if (chmod(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) {
         throw socket_exception("chmod failed: " + std::string(std::strerror(errno)));
     }
@@ -149,7 +155,11 @@ void socket::connect(std::string host, int port) throw(socket_exception) {
     }
     m_fd = ::socket(AF_INET, SOCK_STREAM, 0);
     assert(m_fd > 0);
-    struct sockaddr_in addr = {0};
+#ifndef _OS_DARWIN_
+    struct sockaddr_in addr = {0, 0, 0, {0}};
+#else
+    struct sockaddr_in addr = {0, 0, 0, {0}, {0}};
+#endif
     addr.sin_family = AF_INET;
     std::memcpy(&addr.sin_addr, remote->h_addr_list[0], remote->h_length);
     addr.sin_port = htons(port);

@@ -41,7 +41,7 @@ public:
     static std::string NO_VAL;
     
     uwsgi_request() {
-        m_header = {0};
+        m_header = {0, 0, 0};
     }
 
     inline const std::string& var(std::string key) const {
@@ -90,7 +90,7 @@ public:
 
     inline void clear() {
         m_state = READY;
-        m_header = {0};
+        m_header = {0, 0, 0};
         m_data_buffer.clear();
         m_content_buffer.clear();
         if (m_vars.size()) {
