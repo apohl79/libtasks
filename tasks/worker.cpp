@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -22,10 +22,14 @@
 
 namespace tasks {
 
+#ifndef __clang__
 thread_local worker* worker::m_worker_ptr = nullptr;
+#else
+__thread worker* worker::m_worker_ptr = nullptr;
+#endif
 
 worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop)
-        : m_id(id), m_term(false), m_leader(false), m_thread(&worker::run, this) {
+    : m_id(id), m_term(false), m_leader(false), m_thread(&worker::run, this) {
     // Initialize and add the threads async watcher
     ev_async_init(&m_signal_watcher, tasks_async_callback);
     m_signal_watcher.data = new task_func_queue;
@@ -111,7 +115,7 @@ void worker::run() {
     }
 }
 
-void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events) {
+void tasks_async_callback(struct ev_loop* loop, ev_async* w, int /* events */) {
     worker* worker = (tasks::worker*) ev_userdata(loop);
     assert(nullptr != worker);
     task_func_queue* tfq = (tasks::task_func_queue*) w->data;

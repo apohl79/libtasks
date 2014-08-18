@@ -63,7 +63,7 @@ std::shared_future<std::streamsize> disk_io_task::op() {
     return bytes_promise.get_future();
 }
 
-bool disk_io_task::handle_event(worker* worker, int events) {
+bool disk_io_task::handle_event(worker* /* worker */, int /* events */) {
     tdbg(get_string() << ": handle_event" << std::endl);
     return false;
 }
@@ -75,7 +75,7 @@ void disk_io_task::dispose(worker* worker) {
     if (nullptr == worker) {
         worker = dispatcher::instance()->last_worker();
     }
-    worker->signal_call([this] (struct ev_loop* loop) {
+    worker->signal_call([this] (struct ev_loop* /* loop */) {
             tdbg(get_string() << ": disposing disk_io_task" << std::endl);
             delete this;
         });

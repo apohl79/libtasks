@@ -29,7 +29,7 @@
 
 #include "test_uwsgi_thrift.h"
 
-void ip_service::lookup(response_type& result, const int32_t ipv4, const ipv6_type& ipv6) {
+void ip_service::lookup(response_type& result, const int32_t /* ipv4 */, const ipv6_type& /* ipv6 */) {
     key_value_type kv;
     id_name_type val;
     kv.key.id = 1;

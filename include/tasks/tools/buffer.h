@@ -179,8 +179,6 @@ protected:
 private:
     std::vector<char> m_buffer;
     std::size_t m_size = 0;
-    std::size_t m_offset = 0;
-
 };
 
 } // tools

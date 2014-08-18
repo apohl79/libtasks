@@ -28,7 +28,7 @@
 
 #include "test_uwsgi_thrift_async.h"
 
-void ip_service_async::lookup(response_type& result, const int32_t ipv4, const ipv6_type& ipv6) {
+void ip_service_async::lookup(response_type& result, const int32_t ipv4, const ipv6_type& /* ipv6 */) {
     key_value_type kv;
     id_name_type val;
     if (ipv4 == 123456789) {
@@ -60,7 +60,7 @@ void test_uwsgi_thrift_async::request() {
     
     auto srv = new acceptor<uwsgi_thrift_async_processor<IpServiceProcessor /* Thrift generated */,
                                                          ip_service_async   /* Service handler  */
-                                                         > > (12345);
+                                                         > > (54321);
     tasks::net_io_task::add_task(srv);
 
     using namespace apache::thrift::protocol;
