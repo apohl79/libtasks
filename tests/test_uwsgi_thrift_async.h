@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -32,8 +32,7 @@ using namespace tasks;
 using namespace tasks::net;
 
 class ip_service_async1
-    : public uwsgi_thrift_async_handler<response_type,
-                                        IpService_lookup_result,
+    : public uwsgi_thrift_async_handler<IpService_lookup_result,
                                         IpService_lookup_args> {
 public:
     void service(std::shared_ptr<args_t> args);
@@ -41,8 +40,7 @@ public:
 };
 
 class ip_service_async2
-    : public uwsgi_thrift_async_handler<response_type,
-                                        IpService_lookup_result,
+    : public uwsgi_thrift_async_handler<IpService_lookup_result,
                                         IpService_lookup_args> {
 public:
     void service(std::shared_ptr<args_t> args);
@@ -55,7 +53,7 @@ class test_uwsgi_thrift_async : public CppUnit::TestFixture {
     CPPUNIT_TEST(request_finish_in_worker_ctx);
     CPPUNIT_TEST(request_finish_exec);
     CPPUNIT_TEST_SUITE_END();
-    
+
 public:
     void setUp() {}
     void tearDown() {}
