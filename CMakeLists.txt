@@ -12,6 +12,8 @@ install(FILES ${tasks_headers} DESTINATION include/tasks)
 install(FILES ${net_headers} DESTINATION include/tasks/net)
 install(FILES ${tools_headers} DESTINATION include/tasks/tools)
 
+SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 add_subdirectory(tasks)
 
 if(WITH_EXAMPLES MATCHES "y" OR WITH_EXAMPLES MATCHES "Y")

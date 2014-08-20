@@ -4,7 +4,7 @@ get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
 
 find_package(PkgConfig REQUIRED)
 find_package(Boost 1.53.0 REQUIRED system thread REQUIRED)
-pkg_check_modules(EV libev REQUIRED)
+find_package(LibEV REQUIRED)
 
 if(LIB64 AND (CMAKE_SYSTEM_NAME STREQUAL Linux))
   set(LIB_SUFFIX 64)
@@ -26,9 +26,9 @@ aux_source_directory(tools TASKS_SRC)
 aux_source_directory(net TASKS_SRC)
 include_directories(${PROJECT_SOURCE_DIR}/../include)
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${EV_INCLUDE_DIRS})
+include_directories(${LIBEV_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
-link_directories(${EV_LIBRARY_DIRS})
+link_directories(${LIBEV_LIBRARY_DIRS})
 
 
 add_definitions(-Wall -Wextra -std=c++11 -pthread)
@@ -54,7 +54,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
 endif(CMAKE_BUILD_TYPE MATCHES "Debug")
 
 add_library(${PROJECT_NAME} SHARED ${TASKS_SRC})
-target_link_libraries(${PROJECT_NAME} -lpthread ${EV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} -lpthread ${LIBEV_LIBRARIES})
 set_target_properties(${PROJECT_NAME} PROPERTIES
   VERSION ${LIBRARY_VERSION}
   SOVERSION ${LIBRARY_VERSION}
