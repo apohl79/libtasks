@@ -67,8 +67,8 @@ public:
                     write_thrift_error(std::string("Handler Error: ") + handler->error_string(),
                                        handler->service_name(), seqid, out_protocol);
                 } else {
-                    // Fill the response back in. Note: The seqid parameter is always 0 here.
-                    out_protocol->writeMessageBegin(handler->service_name(), T_REPLY, 0);
+                    // Fill the response back in.
+                    out_protocol->writeMessageBegin(handler->service_name(), T_REPLY, seqid);
                     handler->result_base().__isset.success = true;
                     handler->result_base().write(out_protocol.get());
                     out_protocol->writeMessageEnd();
