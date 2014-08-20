@@ -20,7 +20,7 @@
 #ifndef _TASKS_NET_IO_TASK_H_
 #define _TASKS_NET_IO_TASK_H_
 
-#include <tasks/task.h>
+#include <tasks/event_task.h>
 #include <tasks/worker.h>
 #include <tasks/net/socket.h>
 #include <tasks/ev_wrapper.h>
@@ -31,7 +31,7 @@ namespace tasks {
 
 class worker;
 
-class net_io_task : public task {
+class net_io_task : public event_task {
 public:
     net_io_task(int events);
     net_io_task(net::socket& socket, int events);

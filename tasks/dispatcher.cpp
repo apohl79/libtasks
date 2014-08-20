@@ -2,26 +2,27 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <tasks/dispatcher.h>
 #include <tasks/worker.h>
+#include <tasks/executor.h>
 #include <tasks/task.h>
-#include <tasks/net_io_task.h>
-#include <tasks/timer_task.h>
+#include <tasks/event_task.h>
+#include <tasks/exec_task.h>
 #include <tasks/logging.h>
 #include <cassert>
 #include <cstdarg>
@@ -31,7 +32,7 @@ namespace tasks {
 
 std::shared_ptr<dispatcher> dispatcher::m_instance = nullptr;
 dispatcher::mode dispatcher::m_run_mode = mode::SINGLE_LOOP;
-    
+
 static void handle_signal(struct ev_loop* /* loop */ , ev_signal* sig, int /* revents */) {
     dispatcher* d = (dispatcher*) sig->data;
     assert(nullptr != d);
@@ -45,7 +46,7 @@ dispatcher::dispatcher(uint8_t num_workers)
       m_rr_worker_id(0) {
     // Initialize the event loop structure
     struct ev_loop* loop_raw = ev_default_loop(0);
-    // Create workers 
+    // Create workers
     tdbg("dispatcher: number of cpus is " << (int) m_num_workers << std::endl);
     // The first thread becomes the leader or each thread gets its own loop
     for (uint8_t i = 0; i < m_num_workers; i++) {
@@ -84,7 +85,7 @@ void dispatcher::run(int num, ...) {
 
     // Start the event loop
     start();
-    
+
     // Now we park this thread until someone calls finish()
     join();
 }
@@ -93,10 +94,10 @@ void dispatcher::run(std::vector<tasks::task*>& tasks) {
     for (auto t : tasks) {
         add_task(t);
     }
-    
+
     // Start the event loop
     start();
-    
+
     // Now we park this thread until someone calls finish()
     join();
 }
@@ -135,6 +136,30 @@ std::shared_ptr<worker> dispatcher::free_worker() {
     return nullptr;
 }
 
+std::shared_ptr<executor> dispatcher::free_executor() {
+    tdbg("searching executor" << std::endl);
+    std::lock_guard<std::mutex> lock(m_executor_mutex);
+    auto i = m_executors.begin();
+    auto end = m_executors.end();
+    while (i != end) {
+        if ((*i)->terminated()) {
+            tdbg("erasing terminated executor " << (*i).get() << std::endl);
+            i = m_executors.erase(i);
+        } else if (!(*i)->busy()) {
+            tdbg("returning executor " << (*i).get() << std::endl);
+            (*i)->set_busy();
+            return *i;
+        } else {
+            i++;
+        }
+    }
+    tdbg("creating executor" << std::endl);
+    auto e = std::make_shared<executor>();
+    m_executors.push_back(e);
+    tdbg("returning executor " << e.get() << std::endl);
+    return e;
+}
+
 void dispatcher::add_free_worker(uint8_t id) {
     tdbg("dispatcher: add_free_worker(" << (unsigned int) id << ")" << std::endl);
     m_workers_busy.set(id);
@@ -147,22 +172,45 @@ void dispatcher::print_worker_stats() const {
 }
 
 void dispatcher::add_task(task* task) {
-    worker* worker = nullptr;
-    switch (m_run_mode) {
-    case mode::MULTI_LOOP:
-        // In multi loop mode we pick a worker by round robin
-        worker = m_workers[m_rr_worker_id++ % m_num_workers].get();
-        break;
-    default:
-        // In single loop mode use the current worker
-        worker = worker::get();
-        // If we get called from some other thread than a worker we pick the last active worker
-        if (nullptr == worker) {
-            worker = m_workers[m_last_worker_id].get();
+    // The pass object is no exec_task. Now find a worker to add it.
+    try {
+        event_task* et = dynamic_cast<event_task*>(task);
+        if (nullptr != et) {
+            tdbg("add_task: adding event_task " << task << std::endl);
+            worker* worker = nullptr;
+            switch (m_run_mode) {
+            case mode::MULTI_LOOP:
+                // In multi loop mode we pick a worker by round robin
+                worker = m_workers[m_rr_worker_id++ % m_num_workers].get();
+                break;
+            default:
+                // In single loop mode use the current worker
+                worker = worker::get();
+                // If we get called from some other thread than a worker we pick the last active worker
+                if (nullptr == worker) {
+                    worker = m_workers[m_last_worker_id].get();
+                }
+            }
+            et->init_watcher();
+            et->start_watcher(worker);
+            return;
         }
-    }
-    task->init_watcher();
-    task->start_watcher(worker);
+    } catch (std::exception& e) {}
+
+    // Check if the passed task object is an exec_task.
+    try {
+        exec_task* et = dynamic_cast<exec_task*>(task);
+        if (nullptr != et) {
+            tdbg("add_task: adding exec_task " << task << std::endl);
+            // We got an exec_task passed. We have to find a free executor or create a new one.
+            std::shared_ptr<executor> executor = free_executor();
+            executor->add_task(et);
+            return;
+        }
+    } catch (std::exception& e) {}
+
+    terr("dispatcher: task " << task << " is not an event_task* nor exec_task*!");
+    assert(false);
 }
 
 } // tasks

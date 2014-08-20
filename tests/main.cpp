@@ -35,6 +35,7 @@
 #include "test_uwsgi_thrift.h"
 #include "test_uwsgi_thrift_async.h"
 #include "test_bitset.h"
+#include "test_exec.h"
 
 #include <tasks/dispatcher.h>
 
@@ -46,6 +47,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(test_socket);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_uwsgi_thrift);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_uwsgi_thrift_async);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_bitset);
+CPPUNIT_TEST_SUITE_REGISTRATION(test_exec);
 
 int main(int argc, char** argv) {
     if (argc > 1 && std::string(argv[1]) == "multi") {

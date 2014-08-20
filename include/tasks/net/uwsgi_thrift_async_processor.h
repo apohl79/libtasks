@@ -22,106 +22,108 @@
 
 #include <arpa/inet.h>
 #include <boost/shared_ptr.hpp>
+#include <thrift/Thrift.h>
 #include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/TApplicationException.h>
 #include <unordered_set>
 #include <future>
 
 #include <tasks/net/uwsgi_task.h>
 #include <tasks/net/uwsgi_thrift_transport.h>
 #include <tasks/logging.h>
+#include <tasks/exec.h>
+
+using namespace apache::thrift;
+using namespace apache::thrift::protocol;
+using namespace apache::thrift::transport;
 
 namespace tasks {
 namespace net {
 
-template<class processor_type, class handler_type>
+template<class handler_type>
 class uwsgi_thrift_async_processor : public tasks::net::uwsgi_task {
 public:
-    uwsgi_thrift_async_processor(net::socket& s) : uwsgi_task(s) {
-        m_should_die = false;
-    }
+    typedef uwsgi_thrift_transport<uwsgi_request> in_transport_type;
+    typedef uwsgi_thrift_transport<http_response> out_transport_type;
+    typedef TBinaryProtocol protocol_type;
 
-    virtual ~uwsgi_thrift_async_processor() {
-        m_executor->join();
-    }
+    uwsgi_thrift_async_processor(net::socket& s) : uwsgi_task(s) {}
+
+    virtual ~uwsgi_thrift_async_processor() {}
 
     virtual bool handle_request() {
-        using namespace apache::thrift::protocol;
-        using namespace apache::thrift::transport;
-        typedef uwsgi_thrift_transport<uwsgi_request> in_transport_type;
-        typedef uwsgi_thrift_transport<http_response> out_transport_type;
-        typedef TBinaryProtocol protocol_type;
-
         boost::shared_ptr<in_transport_type> in_transport(new in_transport_type(request_p()));
         boost::shared_ptr<out_transport_type> out_transport(new out_transport_type(response_p()));
         boost::shared_ptr<protocol_type> in_protocol(new protocol_type(in_transport));
         boost::shared_ptr<protocol_type> out_protocol(new protocol_type(out_transport));
 
-        worker *current_worker = worker::get();
-        bool handler_finished = false;
-
         // Process message
-        m_executor.reset(new std::thread([this, current_worker, &handler_finished, in_protocol, out_protocol] {
-
-                    boost::shared_ptr<handler_type> handler(new handler_type());
-                    handler->set_uwsgi_task(this);
-                    processor_type proc(handler);
-                    // Install a callback to send out the response after the handler is ready
-                    handler->on_finish([this, handler, current_worker, &handler_finished] {
-                            if (handler->error()) {
-                                response().set_header("X-UWSGI_THRIFT_ASYNC_PROCESSOR_ERROR", "Handler Error: " + handler->error_string());
-                                response().set_status("400 Bad Request");
-                            }
-                            response().set_header("Content-Type", "application/x-thrift");
-                            this->set_events(EV_WRITE);
-                            this->update_watcher(current_worker);
-                            handler_finished = true;
-                            m_should_die = true;
-                        });
-
-                    try {
-                        proc.process(in_protocol, out_protocol, NULL);
-                    } catch (TTransportException &e) {
-                        response().set_header("X-UWSGI_THRIFT_ASYNC_PROCESSOR_ERROR", std::string("TTransportException: ") + e.what());
-                        response().set_status("400 Bad Request");
-                    }
-                }));
-
-        // Dont die untill thread does its work.
-        return false;
-    }
-
-    virtual bool handle_event(tasks::worker* worker, int revents) {
-        if (EV_READ & revents) {
-            if (m_request.read_data(socket())) {
-                if (m_request.done()) {
-                    if (UWSGI_VARS == m_request.header().modifier1) {
-                        handle_request();
-                    } else {
-                        // No suuport for anything else for now
-                        terr("uwsgi_task: unsupported uwsgi packet: "
-                             << "modifier1=" << (int) m_request.header().modifier1
-                             << " datasize=" << m_request.header().datasize
-                             << " modifier2=" << (int) m_request.header().modifier2
-                             << std::endl);
-                    }
+        worker* worker = worker::get();
+        int32_t seqid = 0;
+        std::shared_ptr<handler_type> handler(new handler_type());
+        handler->set_uwsgi_task(this);
+        handler->on_finish([this, handler, worker, &seqid, out_protocol] {
+                if (handler->error()) {
+                    write_thrift_error(std::string("Handler Error: ") + handler->error_string(),
+                                       handler->service_name(), seqid, out_protocol);
+                } else {
+                    // Fill the response back in. Note: The seqid parameter is always 0 here.
+                    out_protocol->writeMessageBegin(handler->service_name(), T_REPLY, 0);
+                    handler->result_base().__isset.success = true;
+                    handler->result_base().write(out_protocol.get());
+                    out_protocol->writeMessageEnd();
+                    out_protocol->getTransport()->writeEnd();
+                    out_protocol->getTransport()->flush();
+                    response().set_status("200 OK");
                 }
+                response().set_header("Content-Type", "application/x-thrift");
+                // Make sure we run in the context of a worker thread
+                worker->signal_call([this] (struct ev_loop*) {
+                        send_response();
+                    });
+            });
+
+        try {
+            std::string fname;
+            TMessageType mtype;
+            in_protocol->readMessageBegin(fname, mtype, seqid);
+            if (mtype != protocol::T_CALL && mtype != protocol::T_ONEWAY) {
+                write_thrift_error("invalid message type", handler->service_name(), seqid, out_protocol);
+                send_thrift_response();
+            } else if (fname != handler->service_name()) {
+                write_thrift_error("invalid method name", handler->service_name(), seqid, out_protocol);
+                send_thrift_response();
+            } else {
+                // read the args from the request
+                auto args = std::make_shared<typename handler_type::args_t>();
+                args->read(in_protocol.get());
+                in_protocol->readMessageEnd();
+                in_protocol->getTransport()->readEnd();
+                handler->service(args);
             }
-        } else if (EV_WRITE & revents) {
-            if (m_response.write_data(socket())) {
-                if (m_response.done()) {
-                    finish_request();
-                    set_events(EV_READ);
-                    update_watcher(worker);
-                }
-            }
+        } catch (TException& e) {
+            write_thrift_error(std::string("TException: ") + e.what(), handler->service_name(), seqid, out_protocol);
+            send_thrift_response();
         }
-        return !m_should_die;
+
+        return true;
     }
 
+    inline void send_thrift_response() {
+        response().set_header("Content-Type", "application/x-thrift");
+        send_response();
+    }
 
-private:
-    std::atomic<bool> m_should_die;
-    boost::shared_ptr<std::thread> m_executor;
+    inline void write_thrift_error(std::string msg, std::string service_name, int32_t seqid, boost::shared_ptr<protocol_type> out_protocol) {
+        response().set_header("X-UWSGI_THRIFT_ASYNC_PROCESSOR_ERROR", msg);
+        response().set_status("400 Bad Request");
+        TApplicationException ae(msg);
+        out_protocol->writeMessageBegin(service_name, T_EXCEPTION, seqid);
+        ae.write(out_protocol.get());
+        out_protocol->writeMessageEnd();
+        out_protocol->getTransport()->writeEnd();
+        out_protocol->getTransport()->flush();
+    }
 };
 
 } // net

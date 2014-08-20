@@ -21,6 +21,7 @@
 #define _TASKS_DISPATCHER_H_
 
 #include <vector>
+#include <list>
 #include <condition_variable>
 #include <mutex>
 #include <memory>
@@ -34,6 +35,7 @@
 namespace tasks {
         
 class worker;
+class executor;
 class task;
     
 struct signal_data;
@@ -103,6 +105,9 @@ public:
     // Get a free worker to promote it to the leader.
     std::shared_ptr<worker> free_worker();
 
+    // Find a free executor. If non is found a new executor gets created.
+    std::shared_ptr<executor> free_executor();
+
     // When a worker finishes his work he returns to the free worker queue.
     void add_free_worker(uint8_t id);
 
@@ -140,6 +145,10 @@ private:
     // All worker threads
     std::vector<std::shared_ptr<worker> > m_workers;
     uint8_t m_num_workers = 0;
+
+    // All executor threads
+    std::list<std::shared_ptr<executor> > m_executors;
+    std::mutex m_executor_mutex;
 
     static mode m_run_mode;
 

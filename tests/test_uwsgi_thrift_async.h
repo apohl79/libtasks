@@ -26,16 +26,34 @@
 
 #include <IpService.h> // Thrift generated
 
-#include <tasks/net/uwsgi_thrift_handler.h>
+#include <tasks/net/uwsgi_thrift_async_handler.h>
 
-class ip_service_async : public tasks::net::uwsgi_thrift_handler<IpServiceIf> {
+using namespace tasks;
+using namespace tasks::net;
+
+class ip_service_async1
+    : public uwsgi_thrift_async_handler<response_type,
+                                        IpService_lookup_result,
+                                        IpService_lookup_args> {
 public:
-    void lookup(response_type& result, const int32_t ipv4, const ipv6_type& ipv6);
+    void service(std::shared_ptr<args_t> args);
+    std::string service_name() const { return "lookup"; }
 };
+
+class ip_service_async2
+    : public uwsgi_thrift_async_handler<response_type,
+                                        IpService_lookup_result,
+                                        IpService_lookup_args> {
+public:
+    void service(std::shared_ptr<args_t> args);
+    std::string service_name() const { return "lookup"; }
+};
+
 
 class test_uwsgi_thrift_async : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(test_uwsgi_thrift_async);
-    CPPUNIT_TEST(request);
+    CPPUNIT_TEST(request_finish_in_worker_ctx);
+    CPPUNIT_TEST(request_finish_exec);
     CPPUNIT_TEST_SUITE_END();
     
 public:
@@ -43,5 +61,7 @@ public:
     void tearDown() {}
 
 protected:
-    void request();
+    void request_finish_in_worker_ctx();
+    void request_finish_exec();
+    void request(net_io_task* srv);
 };

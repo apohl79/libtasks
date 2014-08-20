@@ -20,7 +20,7 @@
 #ifndef _TASKS_IO_TASK_H_
 #define _TASKS_IO_TASK_H_
 
-#include <tasks/task.h>
+#include <tasks/event_task.h>
 #include <tasks/ev_wrapper.h>
 #include <tasks/tools/buffer.h>
 #include <tasks/logging.h>
@@ -30,7 +30,7 @@ namespace tasks {
 
 class worker;
 
-class disk_io_task : public task {
+class disk_io_task : public event_task {
 public:
     disk_io_task(int fd, int events, tools::buffer* buf);
     virtual ~disk_io_task();

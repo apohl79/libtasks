@@ -30,22 +30,8 @@ namespace net {
 template<class thrift_interface_type>
 class uwsgi_thrift_handler : public thrift_interface_type {
 public:
-    typedef std::function<void ()> handler_finish_func;
-
     inline void set_uwsgi_task(uwsgi_task* t) {
         m_uwsgi_task = t;
-    }
-
-    inline bool error() const {
-        return m_error;
-    }
-
-    inline const std::string& error_string() const {
-        return m_error_string;
-    }
-
-    inline void on_finish(handler_finish_func f) {
-        m_finish_func = f;
     }
 
 protected:
@@ -67,23 +53,8 @@ protected:
         return m_uwsgi_task->response_p();
     }
 
-    // A handler can make a request fail by setting an error state. The
-    // error string will be returned in an HTTP header.
-    inline void set_error(std::string error_string) {
-        m_error = true;
-        m_error_string = error_string;
-    }
-
-    // Async handlers call this method to trigger the processor callback
-    inline void finish() {
-        m_finish_func();
-    }
-
 private:
     uwsgi_task* m_uwsgi_task = nullptr;
-    bool m_error = false;
-    std::string m_error_string;
-    handler_finish_func m_finish_func;
 };
 
 } // net

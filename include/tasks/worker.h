@@ -21,7 +21,7 @@
 #define _TASKS_WORKER_H_
 
 #include <tasks/dispatcher.h>
-#include <tasks/task.h>
+#include <tasks/event_task.h>
 #include <tasks/logging.h>
 #include <tasks/ev_wrapper.h>
 #include <thread>
@@ -41,7 +41,7 @@
 
 namespace tasks {
 
-class task;
+class event_task;
 
 // Needed to use std::unique_ptr<>
 struct loop_t {
@@ -63,7 +63,7 @@ struct task_func_queue {
 // we want to promote the next leader after the ev_loop call
 // returns to avoid calling it from multiple threads.
 struct event {
-    tasks::task* task;
+    tasks::event_task* task;
     int revents;
 };
 
@@ -231,7 +231,7 @@ template<typename EV_t>
 void tasks_event_callback(struct ev_loop* loop, EV_t w, int e) {
     worker* worker = (tasks::worker*) ev_userdata(loop);
     assert(nullptr != worker);
-    task* task = (tasks::task*) w->data;
+    event_task* task = (tasks::event_task*) w->data;
     task->stop_watcher(worker);
     event event = {task, e};
     worker->add_event(event);

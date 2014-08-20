@@ -17,48 +17,31 @@
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TASKS_TIMER_TASK_H_
-#define _TASKS_TIMER_TASK_H_
+#ifndef _TASKS_EXEC_TASK_H_
+#define _TASKS_EXEC_TASK_H_
 
-#include <tasks/event_task.h>
-#include <tasks/ev_wrapper.h>
-#include <memory>
+#include <tasks/task.h>
+#include <tasks/logging.h>
+#include <functional>
 
 namespace tasks {
 
-class worker;
-	
-class timer_task : public event_task {
+class exec_task : public task {
 public:
-    timer_task(double after, double repeat);
-    virtual ~timer_task();
+    typedef std::function<void ()> func_t;
+    
+    exec_task(func_t f) : m_func(f) {}
+    virtual ~exec_task() {}
 
-    inline std::string get_string() const {
-        return "timer_task";
+    virtual void execute() {
+        tdbg("executing m_func" << std::endl);
+        m_func();
     }
-
-    inline ev_timer* watcher() const {
-        return m_timer.get();
-    }
-
-    inline double after() const {
-        return m_after;
-    } 
-
-    inline double repeat() const {
-        return m_repeat;
-    } 
-
-    void init_watcher() {}
-    void start_watcher(worker* worker);
-    void stop_watcher(worker* worker);
 
 private:
-    std::unique_ptr<ev_timer> m_timer;
-    double m_after = 0;
-    double m_repeat = 0.;
+    func_t m_func;
 };
-	
+
 } // tasks
 
-#endif // _TASKS_TIMER_TASK_H_
+#endif // _TASKS_EXEC_TASK_H_
