@@ -21,6 +21,8 @@
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
 
+namespace tasks {
+
 class test_exec : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(test_exec);
     CPPUNIT_TEST(run);
@@ -33,5 +35,7 @@ public:
 protected:
     void run();
 
-    bool check_state(int expected);
+    bool check_state(std::atomic<int>& state, int expected);
 };
+
+}

@@ -32,6 +32,8 @@
 namespace tasks {
 
 class executor {
+    friend class test_exec;
+
 public:
     executor();
 

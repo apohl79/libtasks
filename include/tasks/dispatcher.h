@@ -41,6 +41,8 @@ class task;
 struct signal_data;
     
 class dispatcher {
+    friend class test_exec;
+
 public:
     enum class mode {
         SINGLE_LOOP,

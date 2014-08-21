@@ -26,78 +26,71 @@
 
 #include "test_exec.h"
 
-using namespace tasks;
-
-std::atomic<int> g_state(0);
 std::mutex g_mutex;
 std::condition_variable g_cond;
 
-#ifndef __clang__
-thread_local int t_state = 0;
-#else
-__thread int t_state = 0;
-#endif
+namespace tasks {
 
 void test_exec::run() {
-    std::thread::id tid;
-
     // reduce the idle timeout for executor threads for the tests
-    executor::set_timeout(4);
+    executor::set_timeout(3);
+
+    std::atomic<int> state(0);
 
     // create a task
-    auto t1 = new exec_task([&tid] {
-            tid = std::this_thread::get_id();
-            g_state = 1;
-            t_state++;
+    auto t1 = new exec_task([&state] {
+            state = 1;
             g_cond.notify_one();
         });
     dispatcher::instance()->add_task(t1);
 
-    CPPUNIT_ASSERT_MESSAGE(std::string("g_state=") + std::to_string(g_state), check_state(1));
+    CPPUNIT_ASSERT_MESSAGE(std::string("state=") + std::to_string(state), check_state(state, 1));
 
-    exec([&tid] {
-            // we should be in the same thread as previosly
-            CPPUNIT_ASSERT(std::this_thread::get_id() == tid);
-            g_state = 2;
-            t_state++;
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            g_cond.notify_one();
-        });
+    exec([&state] { state++; },
+         [&state] { state++; g_cond.notify_one(); });
 
-    exec([&tid] {
-            // we should be in the a different thread now
-            CPPUNIT_ASSERT(std::this_thread::get_id() != tid);
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            g_state = 3;
-            t_state++;
-            g_cond.notify_one();
-        });
+    CPPUNIT_ASSERT_MESSAGE(std::string("state=") + std::to_string(state), check_state(state, 3));
 
-    CPPUNIT_ASSERT_MESSAGE(std::string("g_state=") + std::to_string(g_state), check_state(2));
-    CPPUNIT_ASSERT_MESSAGE(std::string("g_state=") + std::to_string(g_state), check_state(3));
+    // dispatcher tests
+    CPPUNIT_ASSERT(dispatcher::instance()->m_executors.size() == 1);
+    // save ref to the one executor
+    std::shared_ptr<executor> executor1 = dispatcher::instance()->free_executor();
+    executor1->m_busy = false;
 
-    // wait until all executors die
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    // use it
+    exec([] { std::this_thread::sleep_for(std::chrono::seconds(2)); });
 
-    exec([] {
-            // we should be in a thread now, that we have not seen before, means t_state must be 0
-            CPPUNIT_ASSERT(t_state == 0);
-            g_state = 4;
-            g_cond.notify_one();
-        });
+    // create a new executor
+    std::shared_ptr<executor> executor2 = dispatcher::instance()->free_executor();
+    executor2->m_busy = false;
 
-    CPPUNIT_ASSERT_MESSAGE(std::string("g_state=") + std::to_string(g_state), check_state(4));
+    // they should be different
+    CPPUNIT_ASSERT(executor1.get() != executor2.get());
 
-    // test on_finish
-    exec([] {g_state = 5;},
-         [] {CPPUNIT_ASSERT(g_state == 5); g_state = 6; g_cond.notify_one();});
-    
+    // use the second executor
+    exec([] { std::this_thread::sleep_for(std::chrono::seconds(2)); });
 
-    CPPUNIT_ASSERT_MESSAGE(std::string("g_state=") + std::to_string(g_state), check_state(6));
+    // check that we have two
+    CPPUNIT_ASSERT(dispatcher::instance()->m_executors.size() == 2);
+
+    // now let they all die
+    std::this_thread::sleep_for(std::chrono::seconds(7));
+
+    // free_executor will clean up and create a new executor
+    std::shared_ptr<executor> executor3 = dispatcher::instance()->free_executor();
+    executor3->m_busy = false;
+
+    CPPUNIT_ASSERT(executor1.get() != executor3.get());
+    CPPUNIT_ASSERT(executor2.get() != executor3.get());
+
+    // we should be back to one now
+    CPPUNIT_ASSERT(dispatcher::instance()->m_executors.size() == 1);
 }
 
-bool test_exec::check_state(int expected) {
+bool test_exec::check_state(std::atomic<int>& state, int expected) {
     std::unique_lock<std::mutex> lock(g_mutex);
-    return g_cond.wait_for(lock, std::chrono::seconds(5),
-                           [expected] { return g_state == expected; });
+    return g_cond.wait_for(lock, std::chrono::seconds(10),
+                           [&state, expected] { return state == expected; });
+}
+
 }

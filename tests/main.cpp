@@ -41,6 +41,8 @@
 
 #include <string>
 
+using namespace tasks;
+
 CPPUNIT_TEST_SUITE_REGISTRATION(test_http_sender);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_disk_io_task);
 CPPUNIT_TEST_SUITE_REGISTRATION(test_socket);
@@ -51,10 +53,10 @@ CPPUNIT_TEST_SUITE_REGISTRATION(test_exec);
 
 int main(int argc, char** argv) {
     if (argc > 1 && std::string(argv[1]) == "multi") {
-        tasks::dispatcher::init_run_mode(tasks::dispatcher::mode::MULTI_LOOP);
+        dispatcher::init_run_mode(dispatcher::mode::MULTI_LOOP);
     }
-    tasks::dispatcher::init_workers(4);
-    tasks::dispatcher::instance()->start();
+    dispatcher::init_workers(4);
+    dispatcher::instance()->start();
 
     // informs test-listener about testresults
     CPPUNIT_NS::TestResult testresult;
