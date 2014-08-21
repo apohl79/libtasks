@@ -20,8 +20,8 @@
 #ifndef _TASKS_NET_IO_TASK_H_
 #define _TASKS_NET_IO_TASK_H_
 
-#include <tasks/event_task.h>
 #include <tasks/worker.h>
+#include <tasks/event_task.h>
 #include <tasks/net/socket.h>
 #include <tasks/ev_wrapper.h>
 #include <memory>
@@ -39,7 +39,7 @@ public:
 
     inline std::string get_string() const {
         std::ostringstream os;
-        os << "net_io_task(" << m_socket.fd() << ":" << m_events << ")";
+        os << "net_io_task(" << this << "," << m_socket.fd() << ":" << m_events << ")";
         return os.str();
     }
 
@@ -84,6 +84,13 @@ private:
     net::socket m_socket;
     int m_events = EV_UNDEF;
     bool m_change_pending = false;
+
+    // For multi loop mode a task does not leave the context of a worker thread, as
+    // each thread runs its own event loop. That also means this worker has to execute
+    // a dispose action. As dispose allows to be called from outside of the task
+    // system (a non worker thread context), a handle to the worker the task belongs
+    // to is needed.
+    worker* m_worker = nullptr;
 };
 
 } // tasks
