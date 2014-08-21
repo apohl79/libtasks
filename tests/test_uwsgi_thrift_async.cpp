@@ -146,5 +146,5 @@ void test_uwsgi_thrift_async::request(net_io_task* srv) {
     srv->dispose();
     // dispose will execute the shutdown code in a worker thread, as that might take
     // some time, we wait a bit
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 }

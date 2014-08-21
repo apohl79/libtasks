@@ -33,7 +33,7 @@ namespace tasks {
 
 void test_exec::run() {
     // reduce the idle timeout for executor threads for the tests
-    executor::set_timeout(3);
+    executor::set_timeout(5);
 
     std::atomic<int> state(0);
 
@@ -74,7 +74,7 @@ void test_exec::run() {
     CPPUNIT_ASSERT(dispatcher::instance()->m_executors.size() == 2);
 
     // now let they all die
-    std::this_thread::sleep_for(std::chrono::seconds(7));
+    std::this_thread::sleep_for(std::chrono::seconds(10));
 
     // free_executor will clean up and create a new executor
     std::shared_ptr<executor> executor3 = dispatcher::instance()->free_executor();
