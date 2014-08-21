@@ -34,7 +34,9 @@ public:
     virtual ~timer_task();
 
     inline std::string get_string() const {
-        return "timer_task";
+        std::ostringstream os;
+        os << "timer_task(" << this << ")";
+        return os.str();
     }
 
     inline ev_timer* watcher() const {

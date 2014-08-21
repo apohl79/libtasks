@@ -50,11 +50,8 @@ struct loop_t {
     loop_t(struct ev_loop* p) : ptr(p) {}
 };
 
-// Signals to enter the leader thread context
-typedef std::function<void(struct ev_loop*)> task_func;
-
-struct task_func_queue {
-    std::queue<task_func> queue;
+struct task_func_queue_t {
+    std::queue<task_func_t> queue;
     std::mutex mutex;
 };
 
@@ -100,10 +97,10 @@ public:
         return loop;
     }
 
-    // Executes task_func directly if called in leader thread
-    // context or delegates it. Returns true when task_func has
+    // Executes task_func_t directly if called in leader thread
+    // context or delegates it. Returns true when task_func_t has
     // been executed.
-    inline bool signal_call(task_func f) {
+    inline bool signal_call(task_func_t f) {
         if (m_leader && this == worker::get()) {
             // The worker is running an event loop and we are running in the workers thread context,
             // now execute the functor
@@ -115,8 +112,8 @@ public:
         }
     }
 
-    inline void async_call(task_func f) {
-        task_func_queue* tfq = (task_func_queue*) m_signal_watcher.data;
+    inline void async_call(task_func_t f) {
+        task_func_queue_t* tfq = (task_func_queue_t*) m_signal_watcher.data;
         std::lock_guard<std::mutex> lock(tfq->mutex);
         tfq->queue.push(f);
         ev_async_send(loop_ptr(), &m_signal_watcher);

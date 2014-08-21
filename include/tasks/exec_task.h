@@ -23,6 +23,7 @@
 #include <tasks/task.h>
 #include <tasks/logging.h>
 #include <functional>
+#include <sstream>
 
 namespace tasks {
 
@@ -33,8 +34,14 @@ public:
     exec_task(func_t f) : m_func(f) {}
     virtual ~exec_task() {}
 
+    inline std::string get_string() const {
+        std::ostringstream os;
+        os << "exec_task(" << this << ")";
+        return os.str();
+    }
+
     virtual void execute() {
-        tdbg("executing m_func" << std::endl);
+        tdbg(get_string() << ": executing m_func" << std::endl);
         m_func();
     }
 

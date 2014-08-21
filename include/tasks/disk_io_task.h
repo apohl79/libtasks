@@ -37,7 +37,7 @@ public:
 
     inline std::string get_string() const {
         std::ostringstream os;
-        os << "disk_io_task(" << m_fd << ":" << m_events << ")";
+        os << "disk_io_task(" << this << "," << m_fd << ":" << m_events << ")";
         return os.str();
     }
 

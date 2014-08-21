@@ -24,6 +24,9 @@
 
 namespace tasks {
 
+// Signals to enter a worker thread context. Passed to worker::signal_call().
+typedef std::function<void(struct ev_loop*)> task_func_t;
+
 class event_task : public task {
 public:
     virtual ~event_task() {}

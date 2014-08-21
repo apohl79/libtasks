@@ -32,7 +32,7 @@ worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop)
     : m_id(id), m_term(false), m_leader(false), m_thread(&worker::run, this) {
     // Initialize and add the threads async watcher
     ev_async_init(&m_signal_watcher, tasks_async_callback);
-    m_signal_watcher.data = new task_func_queue;
+    m_signal_watcher.data = new task_func_queue_t;
 
     assert(dispatcher::mode::SINGLE_LOOP == dispatcher::run_mode() || nullptr != loop);
     struct ev_loop* loop_raw = nullptr;
@@ -49,7 +49,7 @@ worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop)
 
 worker::~worker() {
     tdbg(get_string() << ": dtor" << std::endl);
-    task_func_queue* tfq = (task_func_queue*) m_signal_watcher.data;
+    task_func_queue_t* tfq = (task_func_queue_t*) m_signal_watcher.data;
     delete tfq;
 }
 
@@ -118,7 +118,7 @@ void worker::run() {
 void tasks_async_callback(struct ev_loop* loop, ev_async* w, int /* events */) {
     worker* worker = (tasks::worker*) ev_userdata(loop);
     assert(nullptr != worker);
-    task_func_queue* tfq = (tasks::task_func_queue*) w->data;
+    task_func_queue_t* tfq = (tasks::task_func_queue_t*) w->data;
     if (nullptr != tfq) {
         std::lock_guard<std::mutex> lock(tfq->mutex);
         // Execute all queued functors
