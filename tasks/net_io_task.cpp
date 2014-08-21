@@ -20,8 +20,6 @@
 #include <tasks/worker.h>
 #include <tasks/net_io_task.h>
 #include <tasks/logging.h>
-#include <mutex>
-#include <unistd.h>
 
 namespace tasks {
 
