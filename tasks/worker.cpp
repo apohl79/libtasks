@@ -110,6 +110,7 @@ void worker::run() {
             // Shutdown, the leader terminates the loop
             if (m_leader) {
                 ev_unloop(m_loop->ptr, EVUNLOOP_ALL);
+                ev_loop_destroy(m_loop->ptr);
             }
         }
     }
