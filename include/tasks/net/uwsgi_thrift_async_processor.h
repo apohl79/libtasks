@@ -59,16 +59,15 @@ public:
 
         // Process message
         worker* worker = worker::get();
-        int32_t seqid = 0;
         std::shared_ptr<handler_type> handler(new handler_type());
         handler->set_uwsgi_task(this);
-        handler->on_finish([this, handler, worker, &seqid, out_protocol] {
+        handler->on_finish([this, handler, worker, out_protocol] {
                 if (handler->error()) {
                     write_thrift_error(std::string("Handler Error: ") + handler->error_string(),
-                                       handler->service_name(), seqid, out_protocol);
+                                       handler->service_name(), out_protocol);
                 } else {
                     // Fill the response back in.
-                    out_protocol->writeMessageBegin(handler->service_name(), T_REPLY, seqid);
+                    out_protocol->writeMessageBegin(handler->service_name(), T_REPLY, m_seqid);
                     handler->result_base().__isset.success = true;
                     handler->result_base().write(out_protocol.get());
                     out_protocol->writeMessageEnd();
@@ -86,12 +85,12 @@ public:
         try {
             std::string fname;
             TMessageType mtype;
-            in_protocol->readMessageBegin(fname, mtype, seqid);
+            in_protocol->readMessageBegin(fname, mtype, m_seqid);
             if (mtype != protocol::T_CALL && mtype != protocol::T_ONEWAY) {
-                write_thrift_error("invalid message type", handler->service_name(), seqid, out_protocol);
+                write_thrift_error("invalid message type", handler->service_name(), out_protocol);
                 send_thrift_response();
             } else if (fname != handler->service_name()) {
-                write_thrift_error("invalid method name", handler->service_name(), seqid, out_protocol);
+                write_thrift_error("invalid method name", handler->service_name(), out_protocol);
                 send_thrift_response();
             } else {
                 // read the args from the request
@@ -102,7 +101,7 @@ public:
                 handler->service(args);
             }
         } catch (TException& e) {
-            write_thrift_error(std::string("TException: ") + e.what(), handler->service_name(), seqid, out_protocol);
+            write_thrift_error(std::string("TException: ") + e.what(), handler->service_name(), out_protocol);
             send_thrift_response();
         }
 
@@ -114,16 +113,19 @@ public:
         send_response();
     }
 
-    inline void write_thrift_error(std::string msg, std::string service_name, int32_t seqid, boost::shared_ptr<protocol_type> out_protocol) {
+    inline void write_thrift_error(std::string msg, std::string service_name, boost::shared_ptr<protocol_type> out_protocol) {
         response().set_header("X-UWSGI_THRIFT_ASYNC_PROCESSOR_ERROR", msg);
         response().set_status("400 Bad Request");
         TApplicationException ae(msg);
-        out_protocol->writeMessageBegin(service_name, T_EXCEPTION, seqid);
+        out_protocol->writeMessageBegin(service_name, T_EXCEPTION, m_seqid);
         ae.write(out_protocol.get());
         out_protocol->writeMessageEnd();
         out_protocol->getTransport()->writeEnd();
         out_protocol->getTransport()->flush();
     }
+
+private:
+    int32_t m_seqid = 0;
 };
 
 } // net
