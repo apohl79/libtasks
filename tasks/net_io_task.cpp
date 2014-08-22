@@ -63,9 +63,7 @@ void net_io_task::set_events(int events) {
 }
 
 void net_io_task::start_watcher(worker* worker) {
-    if (dispatcher::mode::MULTI_LOOP == dispatcher::run_mode() && nullptr == m_worker) {
-        m_worker = worker;
-    }
+    sync_worker(worker);
     worker->signal_call([this] (struct ev_loop* loop) {
         if (!ev_is_active(m_io.get())) {
             tdbg(get_string() << ": starting watcher" << std::endl);
@@ -75,6 +73,7 @@ void net_io_task::start_watcher(worker* worker) {
 }
 
 void net_io_task::stop_watcher(worker* worker) {
+    sync_worker(worker);
     worker->signal_call([this] (struct ev_loop* loop) {
             if (ev_is_active(m_io.get())) {
                 tdbg(get_string() << ": stopping watcher" << std::endl);
@@ -84,9 +83,7 @@ void net_io_task::stop_watcher(worker* worker) {
 }
 
 void net_io_task::update_watcher(worker* worker) {
-    if (dispatcher::mode::MULTI_LOOP == dispatcher::run_mode() && nullptr == m_worker) {
-        m_worker = worker;
-    }
+    sync_worker(worker);
     if (m_change_pending) {
         worker->signal_call([this] (struct ev_loop* loop) {
                 tdbg(get_string() << ": updating watcher" << std::endl);

@@ -91,6 +91,15 @@ private:
     // system (a non worker thread context), a handle to the worker the task belongs
     // to is needed.
     worker* m_worker = nullptr;
+
+    inline void sync_worker(worker* worker) {
+        if (dispatcher::mode::MULTI_LOOP == dispatcher::run_mode()) {
+            if (nullptr == m_worker) {
+                m_worker = worker;
+            }
+            assert(worker == m_worker);
+        }
+    }
 };
 
 } // tasks
