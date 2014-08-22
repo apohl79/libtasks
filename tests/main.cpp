@@ -38,6 +38,7 @@
 #include "test_exec.h"
 
 #include <tasks/dispatcher.h>
+#include <tasks/executor.h>
 
 #include <string>
 
@@ -55,7 +56,11 @@ int main(int argc, char** argv) {
     if (argc > 1 && std::string(argv[1]) == "multi") {
         dispatcher::init_run_mode(dispatcher::mode::MULTI_LOOP);
     }
+    // use 4 worker threads
     dispatcher::init_workers(4);
+    // reduce the idle timeout for executor threads for the tests
+    executor::set_timeout(5);
+
     dispatcher::instance()->start();
 
     // informs test-listener about testresults

@@ -32,9 +32,6 @@ std::condition_variable g_cond;
 namespace tasks {
 
 void test_exec::run() {
-    // reduce the idle timeout for executor threads for the tests
-    executor::set_timeout(5);
-
     std::atomic<int> state(0);
 
     // create a task
@@ -52,7 +49,7 @@ void test_exec::run() {
     CPPUNIT_ASSERT_MESSAGE(std::string("state=") + std::to_string(state), check_state(state, 3));
 
     // dispatcher tests
-    CPPUNIT_ASSERT(dispatcher::instance()->m_executors.size() == 1);
+    CPPUNIT_ASSERT_MESSAGE(std::string("size=") + std::to_string(dispatcher::instance()->m_executors.size()), dispatcher::instance()->m_executors.size() == 1);
     // save ref to the one executor
     std::shared_ptr<executor> executor1 = dispatcher::instance()->free_executor();
     executor1->m_busy = false;
@@ -71,7 +68,7 @@ void test_exec::run() {
     exec([] { std::this_thread::sleep_for(std::chrono::seconds(2)); });
 
     // check that we have two
-    CPPUNIT_ASSERT(dispatcher::instance()->m_executors.size() == 2);
+    CPPUNIT_ASSERT_MESSAGE(std::string("size=") + std::to_string(dispatcher::instance()->m_executors.size()), dispatcher::instance()->m_executors.size() == 2);
 
     // now let they all die
     std::this_thread::sleep_for(std::chrono::seconds(10));
@@ -84,7 +81,7 @@ void test_exec::run() {
     CPPUNIT_ASSERT(executor2.get() != executor3.get());
 
     // we should be back to one now
-    CPPUNIT_ASSERT(dispatcher::instance()->m_executors.size() == 1);
+    CPPUNIT_ASSERT_MESSAGE(std::string("size=") + std::to_string(dispatcher::instance()->m_executors.size()), dispatcher::instance()->m_executors.size() == 1);
 }
 
 bool test_exec::check_state(std::atomic<int>& state, int expected) {

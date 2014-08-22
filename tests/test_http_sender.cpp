@@ -32,17 +32,11 @@ bool test_handler::handle_response(std::shared_ptr<tasks::net::http_response> re
 
 void test_http_sender::requests() {
     auto* sender = new tasks::net::http_sender<test_handler>();
-
-    // Connect to remote
-    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
-
     // Notify us when the tasks is finished
     sender->on_finish([this]{ m_cond.notify_one(); });
 
-    // Add io task to the system: send and receive data
-    // NOTE: The sender will be deleted and the http_request will be cleared. For that reason
-    // we have to create a new sender and a new request object for the second request.
-    tasks::net_io_task::add_task(sender);
+    // Connect to remote
+    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
 
     // wait for the response
     std::unique_lock<std::mutex> lock(m_mutex);
@@ -55,9 +49,8 @@ void test_http_sender::requests() {
 
     // Second run
     sender = new tasks::net::http_sender<test_handler>();
-    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
     sender->on_finish([this]{ m_cond.notify_one(); });
-    tasks::net_io_task::add_task(sender);
+    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
     m_cond.wait(lock);
     CPPUNIT_ASSERT(g_status_code == 502);
     CPPUNIT_ASSERT(g_content_type == "text/html");
