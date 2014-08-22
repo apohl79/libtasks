@@ -98,7 +98,12 @@ public:
         }
         m_request->set_header("Host", m_host);
         set_events(EV_WRITE);
-        update_watcher(tasks::dispatcher::instance()->last_worker());
+        tasks::worker* worker = tasks::worker::get();
+        if (nullptr == worker) {
+            worker = tasks::dispatcher::instance()->last_worker();
+        }
+        update_watcher(worker);
+        start_watcher(worker);
         return true;
     }
     
