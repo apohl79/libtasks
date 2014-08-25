@@ -143,6 +143,8 @@ void test_socket::unix() {
     auto srv = new tasks::net::acceptor<echo_handler>(sockfile);
     tasks::net_io_task::add_task(srv);
 
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    
     // create client
     tasks::net::socket client0;
     client0.set_blocking();

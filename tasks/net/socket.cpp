@@ -138,9 +138,18 @@ void socket::connect(std::string path) throw(socket_exception) {
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     std::strcpy(addr.sun_path, path.c_str());
+    
+#ifndef _OS_DARWIN_
     if (::connect(m_fd, (struct sockaddr *) &addr, sizeof(addr.sun_family) + path.length())) {
         throw socket_exception("connect failed: " + std::string(std::strerror(errno)));
     }
+#else
+    addr.sun_len = SUN_LEN(&addr);
+    if (::connect(m_fd, (struct sockaddr *) &addr, SUN_LEN(&addr))) {
+        throw socket_exception("connect failed: " + std::string(std::strerror(errno)));
+    }
+#endif
+
     if (!m_blocking) {
         if (fcntl(m_fd, F_SETFL, fcntl(m_fd, F_GETFL, 0) | O_NONBLOCK)) {
             throw socket_exception("fcntl failed: " + std::string(std::strerror(errno)));
