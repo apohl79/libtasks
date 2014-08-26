@@ -20,7 +20,6 @@
 #include <test_disk_io_task.h>
 #include <tasks/dispatcher.h>
 #include <tasks/tools/buffer.h>
-#include <tasks/tools/itostr.h>
 #include <tasks/disk_io_task.h>
 #include <ostream>
 #include <fcntl.h>
@@ -34,7 +33,7 @@ void test_disk_io_task::write() {
     std::atomic<uint16_t> count(m_total);
     
     for (int i = 0; i < m_total; i++) {
-        std::string fname = "/tmp/disk_io_test" + tasks::tools::itostr<int>(i);
+        std::string fname = "/tmp/disk_io_test" + std::to_string(i);
         int fd = open(fname.c_str(), O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
         CPPUNIT_ASSERT(fd > -1);
 
@@ -70,7 +69,7 @@ void test_disk_io_task::read() {
     delete buf;
 
     for (int i = 0; i < m_total; i++) {
-        std::string fname = "/tmp/disk_io_test" + tasks::tools::itostr<int>(i);
+        std::string fname = "/tmp/disk_io_test" + std::to_string(i);
         int fd = open(fname.c_str(), O_RDONLY);
         CPPUNIT_ASSERT(fd > -1);
 

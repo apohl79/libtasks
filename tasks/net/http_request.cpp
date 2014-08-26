@@ -19,7 +19,6 @@
 
 
 #include <tasks/net/http_request.h>
-#include <tasks/tools/itostr.h>
 
 namespace tasks {
 namespace net {
@@ -34,8 +33,7 @@ void http_request::prepare_data_buffer() {
     // GET/POST
     if (m_content_buffer.size()) {
         m_data_buffer.write("POST ", 5);
-        ctlen = "Content-Length: "
-            + tasks::tools::itostr<std::size_t>(m_content_buffer.size());
+        ctlen = "Content-Length: " + std::to_string(m_content_buffer.size());
     } else {
         m_data_buffer.write("GET ", 4);
     }
