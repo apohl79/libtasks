@@ -59,7 +59,7 @@ public:
 
         // Process message
         worker* worker = worker::get();
-        std::shared_ptr<handler_type> handler(new handler_type());
+        auto handler = new handler_type();
         handler->set_uwsgi_task(this);
         handler->on_finish([this, handler, worker, out_protocol] {
                 if (handler->error()) {
@@ -80,6 +80,7 @@ public:
                 worker->signal_call([this] (struct ev_loop*) {
                         send_response();
                     });
+                delete handler;
             });
 
         try {

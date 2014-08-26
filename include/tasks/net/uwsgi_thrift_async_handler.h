@@ -75,6 +75,7 @@ protected:
     }
 
 public:
+    virtual ~uwsgi_thrift_async_handler() {}
     virtual void service(std::shared_ptr<args_t> args) = 0;
     virtual std::string service_name() const = 0;
 
