@@ -56,22 +56,25 @@ public:
         assert(p < m_bits);
         int_type idx = p/bits_count;
         int_type bit = int_type(1) << p%bits_count;
-        m_bitset[idx] ^= bit;
+        int_type oldval;
+        do {
+            oldval = m_bitset[idx];
+        } while (m_bitset[idx].exchange(oldval ^ bit) != oldval);
     }
 
     inline void set(int_type p) {
         assert(p < m_bits);
         int_type idx = p/bits_count;
         int_type bit = int_type(1) << p%bits_count;
-        m_bitset[idx] |= bit;
+        int_type oldval;
+        do {
+            oldval = m_bitset[idx];
+        } while (m_bitset[idx].exchange(oldval | bit) != oldval);
     }
 
     inline void unset(int_type p) {
-        assert(p < m_bits);
-        int_type idx = p/bits_count;
-        int_type bit = int_type(1) << p%bits_count;
-        if (m_bitset[idx] & bit) {
-            m_bitset[idx] ^= bit;
+        if (test(p)) {
+            toggle(p);
         }
     }
 
