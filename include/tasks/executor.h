@@ -39,7 +39,7 @@ public:
 
     virtual ~executor() {
         terminate();
-        m_thread.join();
+        m_thread->join();
         tdbg("terminated" << std::endl);
     }
 
@@ -75,13 +75,13 @@ public:
     }
 
 private:
-    std::thread m_thread;
     std::atomic<bool> m_busy;
     std::atomic<bool> m_term;
     exec_task* m_task = nullptr;
     std::mutex m_mutex;
     std::condition_variable m_cond;
     static uint32_t m_timeout;
+    std::unique_ptr<std::thread> m_thread;
 
     void run();
 };

@@ -134,7 +134,7 @@ public:
             // interrupt the event loop
             ev_async_send(loop_ptr(), &m_signal_watcher);
         }
-        m_thread.join();
+        m_thread->join();
         tdbg(get_string() << ": thread done" << std::endl);
     }
 
@@ -196,7 +196,6 @@ private:
     std::unique_ptr<loop_t> m_loop;
     std::atomic<bool> m_term;
     std::atomic<bool> m_leader;
-    std::thread m_thread;
     std::mutex m_work_mutex;
     std::condition_variable m_work_cond;
     std::queue<event> m_events_queue;
@@ -209,6 +208,8 @@ private:
     // Every worker has an async watcher to be able to call
     // into the leader thread context.
     ev_async m_signal_watcher;
+
+    std::unique_ptr<std::thread> m_thread;
 
     inline void promote_leader() {
         std::shared_ptr<worker> w = dispatcher::instance()->free_worker();

@@ -44,27 +44,8 @@ dispatcher::dispatcher(uint8_t num_workers)
       m_num_workers(num_workers),
       m_workers_busy(tools::bitset(m_num_workers)),
       m_rr_worker_id(0) {
-    // Initialize the event loop structure
-    struct ev_loop* loop_raw = ev_default_loop(0);
     // Create workers
     tdbg("dispatcher: number of cpus is " << (int) m_num_workers << std::endl);
-    // The first thread becomes the leader or each thread gets its own loop
-    for (uint8_t i = 0; i < m_num_workers; i++) {
-        std::unique_ptr<loop_t> loop = nullptr;
-        if (mode::MULTI_LOOP == m_run_mode) {
-            if (nullptr == loop_raw) {
-                loop_raw = ev_loop_new(0);
-            }
-            assert(loop_raw != nullptr);
-            loop.reset(new loop_t(loop_raw));
-            // Force the next iteration to create a new loop struct.
-            loop_raw = nullptr;
-        }
-        std::shared_ptr<worker> w = std::make_shared<worker>(i, loop);
-        assert(nullptr != w);
-        m_workers.push_back(w);
-        m_workers_busy.set(i);
-    }
     // Setup signal handlers
     ev_signal_init(&m_signal, handle_signal, SIGINT);
     m_signal.data = this;
@@ -72,6 +53,9 @@ dispatcher::dispatcher(uint8_t num_workers)
 }
 
 void dispatcher::run(int num, ...) {
+    // Start the event loop
+    start();
+
     // Start tasks if passed
     if (num > 0) {
         va_list tasks;
@@ -83,28 +67,49 @@ void dispatcher::run(int num, ...) {
         va_end(tasks);
     }
 
-    // Start the event loop
-    start();
-
     // Now we park this thread until someone calls finish()
     join();
 }
 
 void dispatcher::run(std::vector<tasks::task*>& tasks) {
+    // Start the event loop
+    start();
+
     for (auto t : tasks) {
         add_task(t);
     }
-
-    // Start the event loop
-    start();
 
     // Now we park this thread until someone calls finish()
     join();
 }
 
 void dispatcher::start() {
+    // The first thread becomes the leader or each thread gets its own loop
+    struct ev_loop* loop_raw = ev_default_loop(0);
+    for (uint8_t i = 0; i < m_num_workers; i++) {
+        std::unique_ptr<loop_t> loop = nullptr;
+        if (mode::MULTI_LOOP == m_run_mode) {
+            if (nullptr == loop_raw) {
+                loop_raw = ev_loop_new(0);
+            }
+            assert(loop_raw != nullptr);
+            loop.reset(new loop_t(loop_raw));
+            // Force the next iteration to create a new loop struct.
+            loop_raw = nullptr;
+        }
+        m_workers_busy.unset(i);
+        auto w = std::make_shared<worker>(i, loop);
+        assert(nullptr != w);
+        m_workers.push_back(w);
+    }
+    // Wait for the workers to become available
+    for (uint8_t i = 0; i < m_num_workers; i++) {
+        while (!m_workers_busy.test(i)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
     if (mode::SINGLE_LOOP == m_run_mode) {
-        // Create an event loop and pass it to a worker
+        // Promote the first leader
         std::unique_ptr<loop_t> loop(new loop_t);
         loop->ptr = ev_default_loop(0);
         m_workers_busy.unset(0);

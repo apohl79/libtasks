@@ -29,7 +29,7 @@ __thread worker* worker::m_worker_ptr = nullptr;
 #endif
 
 worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop)
-    : m_id(id), m_term(false), m_leader(false), m_thread(&worker::run, this) {
+    : m_id(id), m_term(false), m_leader(false) {
     // Initialize and add the threads async watcher
     ev_async_init(&m_signal_watcher, tasks_async_callback);
     m_signal_watcher.data = new task_func_queue_t;
@@ -45,6 +45,7 @@ worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop)
         loop_raw = ev_default_loop(0);
     }
     ev_async_start(loop_raw, &m_signal_watcher);
+    m_thread.reset(new std::thread(&worker::run, this));
 }
 
 worker::~worker() {
@@ -56,9 +57,8 @@ worker::~worker() {
 void worker::run() {
     m_worker_ptr = this;
 
-    // Wait for a short while before entering the loop to allow
-    // the dispatcher to finish its initialization.
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    dispatcher::instance()->add_free_worker(id());
+
     while (!m_term) {
         // Wait until promoted to the leader thread
         if (!m_leader) {

@@ -26,7 +26,8 @@ namespace tasks {
 uint32_t executor::m_timeout = 60;
 
 executor::executor()
-    : m_thread(&executor::run, this), m_busy(true), m_term(false) {
+    : m_busy(true), m_term(false) {
+    m_thread.reset(new std::thread(&executor::run, this));
 }
 
 void executor::run() {
