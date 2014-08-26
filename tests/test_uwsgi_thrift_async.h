@@ -61,5 +61,5 @@ public:
 protected:
     void request_finish_in_worker_ctx();
     void request_finish_exec();
-    void request(net_io_task* srv);
+    void request(net_io_task* srv, std::string url);
 };

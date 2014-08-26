@@ -85,19 +85,21 @@ void ip_service_async2::service(std::shared_ptr<args_t> args) {
 }
 
 void test_uwsgi_thrift_async::request_finish_in_worker_ctx() {
-    request(new acceptor<uwsgi_thrift_async_processor<ip_service_async1> >(12345));
+    auto srv = new acceptor<uwsgi_thrift_async_processor<ip_service_async1> >(12346);
+    request(srv, "/test2");
 }
 
 void test_uwsgi_thrift_async::request_finish_exec() {
-    request(new acceptor<uwsgi_thrift_async_processor<ip_service_async2> >(12345));
+    auto srv = new acceptor<uwsgi_thrift_async_processor<ip_service_async2> >(12347);
+    request(srv, "/test3");
 }
 
-void test_uwsgi_thrift_async::request(net_io_task* srv) {
+void test_uwsgi_thrift_async::request(net_io_task* srv, std::string url) {
     tasks::net_io_task::add_task(srv);
 
     using namespace apache::thrift::protocol;
     using namespace apache::thrift::transport;
-    boost::shared_ptr<THttpClient> transport(new THttpClient("localhost", 18080, "/"));
+    boost::shared_ptr<THttpClient> transport(new THttpClient("localhost", 18080, url));
     boost::shared_ptr<TBinaryProtocol> protocol(new TBinaryProtocol(transport));
     IpServiceClient client(protocol);
 
@@ -123,7 +125,7 @@ void test_uwsgi_thrift_async::request(net_io_task* srv) {
 
         transport->close();
     } catch (TTransportException& e) {
-        srv->dispose();
+        srv->finish();
         CPPUNIT_ASSERT_MESSAGE(std::string("TTransportException: ") + e.what(), false);
     }
 
@@ -137,14 +139,11 @@ void test_uwsgi_thrift_async::request(net_io_task* srv) {
 
         transport->close();
 
-        srv->dispose();
+        srv->finish();
         CPPUNIT_ASSERT_MESSAGE("TTransportException expected", false);
     } catch (TTransportException& e) {
         CPPUNIT_ASSERT(e.what() == std::string("Bad Status: HTTP/1.1"));
     }
 
-    srv->dispose();
-    // dispose will execute the shutdown code in a worker thread, as that might take
-    // some time, we wait a bit
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    srv->finish();
 }

@@ -44,15 +44,16 @@ void test_http_sender::requests() {
     lock.unlock();
 
     // Check returned data
-    CPPUNIT_ASSERT(g_status_code == 502);
-    CPPUNIT_ASSERT(g_content_type == "text/html");
+    CPPUNIT_ASSERT_MESSAGE(std::string("g_status_code = ") + std::to_string(g_status_code), g_status_code == 404);
+    CPPUNIT_ASSERT_MESSAGE(std::string("g_content_type = ") + g_content_type, g_content_type == "text/html");
 
     // Second run
     sender = new tasks::net::http_sender<test_handler>();
     sender->on_finish([this]{ m_cond.notify_one(); });
     CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
-    m_cond.wait(lock);
-    CPPUNIT_ASSERT(g_status_code == 502);
-    CPPUNIT_ASSERT(g_content_type == "text/html");
+    std::unique_lock<std::mutex> lock2(m_mutex);
+    m_cond.wait(lock2);
+    CPPUNIT_ASSERT_MESSAGE(std::string("g_status_code = ") + std::to_string(g_status_code), g_status_code == 404);
+    CPPUNIT_ASSERT_MESSAGE(std::string("g_content_type = ") + g_content_type, g_content_type == "text/html");
 }
 

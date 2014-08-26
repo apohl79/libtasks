@@ -69,7 +69,7 @@ public:
         m_auto_delete = false;
     }
 
-    inline void finish(worker* worker) {
+    inline void finish(worker* worker = nullptr) {
         for (auto f : m_finish_funcs) {
             f(worker);
         }

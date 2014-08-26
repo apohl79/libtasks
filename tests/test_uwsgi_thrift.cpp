@@ -51,7 +51,7 @@ void ip_service::lookup(response_type& result, const int32_t /* ipv4 */, const i
 void test_uwsgi_thrift::request() {
     using namespace tasks;
     using namespace tasks::net;
-    
+
     auto srv = new acceptor<uwsgi_thrift_processor<IpServiceProcessor /* Thrift generated */,
                                                    ip_service         /* Service handler  */
                                                    > > (12345);
@@ -59,7 +59,7 @@ void test_uwsgi_thrift::request() {
 
     using namespace apache::thrift::protocol;
     using namespace apache::thrift::transport;
-    boost::shared_ptr<THttpClient> transport(new THttpClient("127.0.0.1", 18080, "/"));
+    boost::shared_ptr<THttpClient> transport(new THttpClient("127.0.0.1", 18080, "/test1"));
     boost::shared_ptr<TBinaryProtocol> protocol(new TBinaryProtocol(transport));
     IpServiceClient client(protocol);
 
@@ -90,5 +90,5 @@ void test_uwsgi_thrift::request() {
     }
     CPPUNIT_ASSERT(success);
 
-    srv->dispose();
+    srv->finish();
 }
