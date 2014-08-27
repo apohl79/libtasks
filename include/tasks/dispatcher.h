@@ -168,6 +168,7 @@ private:
     std::mutex m_finish_mutex;
 
     ev_signal m_signal;
+    bool m_started = false;
 };
 
 } // tasks

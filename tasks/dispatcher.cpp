@@ -115,6 +115,7 @@ void dispatcher::start() {
         m_workers_busy.unset(0);
         m_workers[0]->set_event_loop(loop);
     }
+    m_started = true;
 }
 
 void dispatcher::join() {
@@ -177,6 +178,11 @@ void dispatcher::print_worker_stats() const {
 }
 
 void dispatcher::add_task(task* task) {
+    // Check if the system is running
+    if (!m_started) {
+        terr("dispatcher: You have to call dispatcher::start() before dispatcher::add_task()" << std::endl);
+        assert(false);
+    }
     // The pass object is no exec_task. Now find a worker to add it.
     try {
         event_task* et = dynamic_cast<event_task*>(task);
