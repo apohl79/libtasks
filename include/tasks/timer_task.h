@@ -23,6 +23,7 @@
 #include <tasks/event_task.h>
 #include <tasks/ev_wrapper.h>
 #include <memory>
+#include <sstream>
 
 namespace tasks {
 
