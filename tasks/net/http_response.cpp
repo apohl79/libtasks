@@ -26,7 +26,6 @@
 #include <tasks/logging.h>
 #include <tasks/net/http_response.h>
 #include <tasks/net/socket.h>
-#include <tasks/tools/itostr.h>
 
 namespace tasks {
 namespace net {
@@ -43,8 +42,7 @@ void http_response::prepare_data_buffer() {
         m_data_buffer.write(kv.second.c_str(), kv.second.length());
         m_data_buffer.write(CRLF, CRLF_SIZE);
     }
-    std::string ct = "Content-Length: "
-        + tasks::tools::itostr<std::size_t>(m_content_buffer.size());
+    std::string ct = "Content-Length: " + std::to_string(m_content_buffer.size());
     m_data_buffer.write(ct.c_str(), ct.length());
     m_data_buffer.write(CRLF, CRLF_SIZE);
     m_data_buffer.write(CRLF, CRLF_SIZE);
