@@ -36,6 +36,9 @@ add_definitions(-DTASKS_VERSION="${LIBRARY_VERSION}")
 
 if(CMAKE_SYSTEM_NAME STREQUAL Linux)
   add_definitions(-O4 -D_OS_LINUX_)
+  # TBD: check the compiler version. C++14 deplrecated support has been added to gcc 4.9. For older versions we hide
+  # attribute warnings.
+  add_definitions(-Wno-attributes)
   execute_process(COMMAND getconf LEVEL1_DCACHE_LINESIZE OUTPUT_VARIABLE CACHE_LINE_SIZE OUTPUT_STRIP_TRAILING_WHITESPACE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
   add_definitions(-O3 -D_OS_DARWIN_)
