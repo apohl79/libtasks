@@ -50,7 +50,9 @@ int main(int argc, char** argv) {
     acceptor<uwsgi_thrift_processor<IpServiceProcessor /* Thrift generated */,
                                     ip_service         /* Service handler  */
                                     > > srv(12345);
-    dispatcher::instance()->run(1, &srv);
+    dispatcher::instance()->start();
+    dispatcher::instance()->add_task(&srv);
+    dispatcher::instance()->join();
 
     return 0;
 }

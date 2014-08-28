@@ -69,7 +69,8 @@ int main(int argc, char** argv) {
 #endif
     stats s;
     tasks::net::acceptor<uwsgi_handler> srv(12345);
-    tasks::dispatcher::instance()->run(2, &srv, &s);
+    auto tasks = std::vector<tasks::task*>{&srv, &s};
+    tasks::dispatcher::instance()->run(tasks);
 #ifdef PROFILER
     ProfilerStop();
 #endif

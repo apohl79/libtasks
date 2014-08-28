@@ -11,7 +11,7 @@ pkg_check_modules(CPPUNIT cppunit)
 execute_process(COMMAND thrift --gen cpp -o ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/ipservice.thrift)
 execute_process(COMMAND rm -f ${PROJECT_BINARY_DIR}/gen-cpp/IpService_server.skeleton.cpp)
 
-add_definitions(-Wall -Wextra -std=c++11 -pthread)
+add_definitions(-Wall -Wextra -std=c++1y -pthread)
 
 if(CMAKE_SYSTEM_NAME STREQUAL Linux)
   add_definitions(-O4 -D_OS_LINUX_)

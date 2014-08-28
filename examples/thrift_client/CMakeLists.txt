@@ -2,7 +2,7 @@ project(thrift_client)
 cmake_minimum_required(VERSION 2.6)
 
 #add_compile_options(-O4 -ggdb -std=c++11 -pthread)
-add_definitions(-O4 -ggdb -std=c++11 -pthread)
+add_definitions(-O4 -ggdb -std=c++1y -pthread)
 
 include_directories(${PROJECT_SOURCE_DIR}/../../include ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/gen-cpp)
 

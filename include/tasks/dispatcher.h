@@ -123,6 +123,7 @@ public:
     void add_task(task* task);
 
     // This methods start the system and block until terminate() gets called.
+    [[deprecated]]
     void run(int num, ...);
     void run(std::vector<tasks::task*>& tasks);
 

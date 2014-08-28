@@ -100,7 +100,8 @@ int main(int argc, char** argv) {
     stats s;
     acceptor<echo_handler> srv(12345);
     //dispatcher::init_workers(1);
-    dispatcher::instance()->run(2, &srv, &s);
+    auto tasks = std::vector<task*>{&srv, &s};
+    dispatcher::instance()->run(tasks);
 #ifdef PROFILER
     ProfilerStop();
 #endif

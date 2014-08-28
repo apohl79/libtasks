@@ -31,7 +31,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 link_directories(${LIBEV_LIBRARY_DIRS})
 
 
-add_definitions(-Wall -Wextra -std=c++11 -pthread)
+add_definitions(-Wall -Wextra -std=c++1y -pthread)
 add_definitions(-DTASKS_VERSION="${LIBRARY_VERSION}")
 
 if(CMAKE_SYSTEM_NAME STREQUAL Linux)
