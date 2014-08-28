@@ -57,6 +57,6 @@ extern std::mutex g_log_mutex;
 #define tdbg(m)
 #endif
 
-#define terr(m) tlog(std::cerr,m)
+#define terr(m) tlog(std::clog,m)
 
 #endif // _TASKS_LOGGING_H_
