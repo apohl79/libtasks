@@ -28,8 +28,7 @@ namespace net {
 
 const std::string http_base::NO_VAL;
 
-bool http_base::write_data(socket& sock) {
-    bool success = true;
+void http_base::write_data(socket& sock) {
     // Fill the data buffer in ready state
     if (READY == m_state) {
         prepare_data_buffer();
@@ -37,8 +36,8 @@ bool http_base::write_data(socket& sock) {
     }
     // Write data buffer
     if (WRITE_DATA == m_state) {
-        success = write_headers(sock);
-        if (success && !m_data_buffer.to_read()) {
+        write_headers(sock);
+        if (!m_data_buffer.to_read()) {
             if (m_content_buffer.size()) {
                 m_state = WRITE_CONTENT;
             } else {
@@ -47,45 +46,30 @@ bool http_base::write_data(socket& sock) {
         }
     }
     // Write content buffer
-    if (success && WRITE_CONTENT == m_state) {
-        success = write_content(sock);
-        if (success && !m_content_buffer.to_read()) {
+    if (WRITE_CONTENT == m_state) {
+        write_content(sock);
+        if (!m_content_buffer.to_read()) {
             m_state = DONE;
         }
     }
-    return success;
 }
 
-bool http_base::write_headers(socket& sock) {
-    bool success = true;
-    try {
-        std::streamsize bytes = sock.write(m_data_buffer.ptr_read(), m_data_buffer.to_read());
-        if (bytes > 0) {
-            tdbg("http_base: wrote data successfully, " << bytes << "/" << m_data_buffer.size()
-                 << " bytes" << std::endl);
-            m_data_buffer.move_ptr_read(bytes);
-        }
-    } catch (socket_exception& e) {
-        terr("http_base::write_headers: " << e.what() << std::endl);
-        success = false;
+void http_base::write_headers(socket& sock) {
+    std::streamsize bytes = sock.write(m_data_buffer.ptr_read(), m_data_buffer.to_read());
+    if (bytes > 0) {
+        tdbg("http_base: wrote data successfully, " << bytes << "/" << m_data_buffer.size()
+             << " bytes" << std::endl);
+        m_data_buffer.move_ptr_read(bytes);
     }
-    return success;
 }
 
-bool http_base::write_content(socket& sock) {
-    bool success = true;
-    try {
-        std::streamsize bytes = sock.write(m_content_buffer.ptr_read(), m_content_buffer.to_read());
-        if (bytes > 0) {
-            tdbg("http_base: wrote content successfully, " << bytes << "/" << m_content_buffer.size()
-                 << " bytes" << std::endl);
-            m_content_buffer.move_ptr_read(bytes);
-        }
-    } catch (socket_exception& e) {
-        terr("http_base::write_content: " << e.what() << std::endl);
-        success = false;
+void http_base::write_content(socket& sock) {
+    std::streamsize bytes = sock.write(m_content_buffer.ptr_read(), m_content_buffer.to_read());
+    if (bytes > 0) {
+        tdbg("http_base: wrote content successfully, " << bytes << "/" << m_content_buffer.size()
+             << " bytes" << std::endl);
+        m_content_buffer.move_ptr_read(bytes);
     }
-    return success;
 }
 
 } // net

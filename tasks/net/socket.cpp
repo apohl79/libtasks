@@ -34,16 +34,16 @@ namespace tasks {
 namespace net {
 
 socket::socket(socket_type type) : m_fd(-1), m_type(type) {
-    if (UDP == m_type) {
+    if (socket_type::UDP == m_type) {
         m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
         assert(m_fd > 0);
-    } else if (TCP != m_type) {
+    } else if (socket_type::TCP != m_type) {
         terr("socket: Invalid socket_type! Using TCP.");
-        m_type = TCP;
+        m_type = socket_type::TCP;
     }
 }
 
-void socket::listen(std::string path, int queue_size) throw(socket_exception) {
+void socket::listen(std::string path, int queue_size) {
     m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
     assert(m_fd > 0);
     if (!m_blocking) {
@@ -72,7 +72,7 @@ void socket::listen(std::string path, int queue_size) throw(socket_exception) {
     }
 }
 
-void socket::listen(int port, std::string ip, int queue_size) throw(socket_exception) {
+void socket::listen(int port, std::string ip, int queue_size) {
     if (udp()) {
         throw socket_exception("listen failed: can't be called for UDP sockets");
     }
@@ -82,13 +82,13 @@ void socket::listen(int port, std::string ip, int queue_size) throw(socket_excep
     }
 }
 
-void socket::bind(int port, std::string ip) throw(socket_exception) {
+void socket::bind(int port, std::string ip) {
     bind(port, ip, true /* mark this object as udp socket */);
 }
 
-void socket::bind(int port, std::string ip, bool udp) throw(socket_exception) {
+void socket::bind(int port, std::string ip, bool udp) {
     int on = 1;
-    m_type = UDP;
+    m_type = socket_type::UDP;
     m_fd = ::socket(AF_INET, udp ? SOCK_DGRAM: SOCK_STREAM, 0);
     assert(m_fd > 0);
     if (setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on))) {
@@ -122,7 +122,7 @@ void socket::init_sockaddr(int port, std::string ip) {
     m_addr->sin_port = htons(port);
 }
 
-socket socket::accept() throw(socket_exception) {
+socket socket::accept() {
     struct sockaddr_in addr;
     socklen_t len = sizeof(addr);
     int client = ::accept(m_fd, (struct sockaddr *) &addr, &len);
@@ -132,7 +132,7 @@ socket socket::accept() throw(socket_exception) {
     return socket(client);
 }
 
-void socket::connect(std::string path) throw(socket_exception) {
+void socket::connect(std::string path) {
     m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
     assert(m_fd > 0);
     struct sockaddr_un addr;
@@ -157,7 +157,7 @@ void socket::connect(std::string path) throw(socket_exception) {
     }
 }
 
-void socket::connect(std::string host, int port) throw(socket_exception) {
+void socket::connect(std::string host, int port) {
     struct hostent* remote = gethostbyname(host.c_str());
     if (nullptr == remote) {
         throw socket_exception("Host " + host + " not found");
@@ -194,7 +194,7 @@ void socket::shutdown() {
 }
 
 std::streamsize socket::write(const char* data, std::size_t len,
-                              int port, std::string ip) throw(socket_exception) {
+                              int port, std::string ip) {
     if (m_fd == -1 && udp()) {
         m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
         assert(m_fd > 0);
@@ -217,7 +217,7 @@ std::streamsize socket::write(const char* data, std::size_t len,
     return bytes;
 }
 
-std::streamsize socket::read(char* data, std::size_t len) throw(socket_exception) {
+std::streamsize socket::read(char* data, std::size_t len) {
     sockaddr* addr = nullptr;
     socklen_t addr_len = 0;
     if (udp() && nullptr != m_addr) {

@@ -49,8 +49,7 @@ void http_response::prepare_data_buffer() {
 }
 
 // We are reading things into the content buffer only.
-bool http_response::read_data(socket& sock) {
-    bool success = true;
+void http_response::read_data(socket& sock) {
     if (READY == m_state) {
         m_content_buffer.set_size(READ_BUFFER_SIZE_BLOCK);
         m_state = READ_DATA;
@@ -63,34 +62,27 @@ bool http_response::read_data(socket& sock) {
                 m_content_buffer.set_size(m_content_buffer.buffer_size() + READ_BUFFER_SIZE_BLOCK);
                 towrite = m_content_buffer.to_write() - 1;
             }
-            try {
-                bytes = sock.read(m_content_buffer.ptr_write(), towrite);
-                if (bytes > 0) {
-                    m_content_buffer.move_ptr_write(bytes);
-                    if (READ_DATA == m_state) {
-                        // Terminate the string for parsing
-                        *(m_content_buffer.ptr_write()) = 0;
-                        success = parse_data();
-                    }
-                    tdbg("http_response: read data successfully, " << bytes << " bytes" << std::endl);
-                    if (m_content_length == m_content_buffer.offset_write() - m_content_start) {
-                        *(m_content_buffer.ptr_write()) = 0;
-                        m_content_buffer.set_size(m_content_start + m_content_length);
-                        m_content_buffer.move_ptr_read_abs(m_content_start);
-                        m_state = DONE;
-                    }
+            bytes = sock.read(m_content_buffer.ptr_write(), towrite);
+            if (bytes > 0) {
+                m_content_buffer.move_ptr_write(bytes);
+                if (READ_DATA == m_state) {
+                    // Terminate the string for parsing
+                    *(m_content_buffer.ptr_write()) = 0;
+                    parse_data();
                 }
-            } catch (socket_exception& e) {
-                terr("http_response: " << e.what() << std::endl);
-                success = false;
+                tdbg("http_response: read data successfully, " << bytes << " bytes" << std::endl);
+                if (m_content_length == m_content_buffer.offset_write() - m_content_start) {
+                    *(m_content_buffer.ptr_write()) = 0;
+                    m_content_buffer.set_size(m_content_start + m_content_length);
+                    m_content_buffer.move_ptr_read_abs(m_content_start);
+                    m_state = DONE;
+                }
             }
         } while (towrite == bytes);
     }
-    return success;
 }
 
-bool http_response::parse_data() {
-    bool success = true;
+void http_response::parse_data() {
     // find the next line break
     char* eol = nullptr;
     do {
@@ -102,20 +94,14 @@ bool http_response::parse_data() {
             std::size_t len = eol - m_content_buffer.ptr(m_last_line_start);
             if (len) {
                 *eol = 0;
-                success = parse_line();
-                if (success) {
-                    m_last_line_start += len + 1;
-                }
+                parse_line();
+                m_last_line_start += len + 1;
             } else {
                 // Second line break means content starts
                 if (m_chunked_enc) {
-                    success = false;
-                    terr("http_response: Chunked transfer encoding needs to be implemented!"
-                         << std::endl);
+                    throw http_exception("http_response: Chunked transfer encoding needs to be implemented!");
                 } else if (!m_content_length_exists) {
-                    success = false;
-                    terr("http_response: Invalid response: Content-Length header missing"
-                         << std::endl);
+                    throw http_exception("http_response: Invalid response: Content-Length header missing");
                 }
                 m_content_start = m_last_line_start + 1;
                 if (*(m_content_buffer.ptr(m_content_start)) == '\n') {
@@ -125,33 +111,31 @@ bool http_response::parse_data() {
                 m_state = READ_CONTENT;
             }
         }
-    } while (success && nullptr != eol && 0 == m_content_start);
-    return success;
+    } while (nullptr != eol && 0 == m_content_start);
 }
 
-bool http_response::parse_line() {
-    bool success = true;
+void http_response::parse_line() {
     if (0 == m_line_number) {
-        success = parse_status();
+        parse_status();
     } else {
-        success = parse_header();
+        parse_header();
     }
     m_line_number++;
-    return success;
 }
 
-bool http_response::parse_status() {
+void http_response::parse_status() {
     // HTTP/#.# ### text
     // Skip the first 5 bytes "HTTP/"
     const char* space = std::strchr(m_content_buffer.ptr(m_last_line_start + 5), ' ');
     m_status = space + 1;
     m_status_code = std::atoi(space + 1);
     tdbg("http_response: Status is " << m_status << std::endl);
-    return (m_status_code > 99 && m_status_code < 1000);
+    if (m_status_code < 100 || m_status_code > 999) {
+        throw http_exception("http_response: Invalid status code " + std::to_string(m_status_code));
+    }
 }
 
-bool http_response::parse_header() {
-    bool success = true;
+void http_response::parse_header() {
     char* eq = std::strchr(m_content_buffer.ptr(m_last_line_start), ':');
     if (nullptr != eq) {
         *eq = 0;
@@ -174,11 +158,8 @@ bool http_response::parse_header() {
             }
         }
     } else {
-        terr("http_response: Invalid header: " << m_content_buffer.ptr(m_last_line_start)
-             << std::endl);
-        success = false;
+        throw http_exception("http_response: Invalid header: " + std::string(m_content_buffer.ptr(m_last_line_start)));
     }
-    return success;
 }
 
 } // net

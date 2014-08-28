@@ -63,6 +63,7 @@ public:
 int main(int argc, char** argv) {
     // initialize the dispatcher first
     auto disp = tasks::dispatcher::instance();
+    disp->start();
     auto* sender = new tasks::net::http_sender<json_handler>();
     // after sending the request we terminate the dispatcher and exit
     sender->on_finish([]{
@@ -70,12 +71,13 @@ int main(int argc, char** argv) {
         });
     auto request = std::make_shared<tasks::net::http_request>("graph.facebook.com",
                                                               "/search?q=test");
-    if (sender->send(request)) {
-        disp->run(1, sender);
-    } else {
+    try {
+        sender->send(request);
+    } catch (tasks::tasks_exception& e) {
+        std::cerr << "error: " << e.what() << std::endl;
         delete sender;
         disp->terminate();
-        disp->join();
     }
+    disp->join();
     return 0;
 }

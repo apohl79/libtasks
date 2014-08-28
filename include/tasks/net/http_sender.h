@@ -50,8 +50,9 @@ public:
 
     bool handle_event(tasks::worker* worker, int revents) {
         bool success = true;
-        if (EV_READ & revents) {
-            if (m_response->read_data(socket())) {
+        try {
+            if (EV_READ & revents) {
+                m_response->read_data(socket());
                 if (m_response->done()) {
                     if (nullptr == m_handler) {
                         m_handler = std::make_shared<handler_type>();
@@ -59,27 +60,22 @@ public:
                     success = m_handler->handle_response(m_response);
                     m_response->clear();
                     m_request->clear();
-                    // Stop watching for events until the next send() call
-                    //set_events(EV_UNDEF);
-                    //update_watcher(worker);
                 }
-            } else {
-                success = false;
-            }
-        } else if (EV_WRITE & revents) {
-            if (m_request->write_data(socket())) {
+            } else if (EV_WRITE & revents) {
+                m_request->write_data(socket());
                 if (m_request->done()) {
                     set_events(EV_READ);
                     update_watcher(worker);
                 }
-            } else {
-                success = false;
             }
+        } catch (tasks::tasks_exception& e) {
+            set_error(e.what());
+            success = false;
         }
         return success;
     }
 
-    inline bool send(std::shared_ptr<http_request> request) {
+    inline void send(std::shared_ptr<http_request> request) {
         m_request = request;
         const std::string& host = m_request->header("Host");
         if (-1 == socket().fd() || m_host != host) {
@@ -89,12 +85,7 @@ public:
             socket().close();
             // Connect
             tdbg("http_sender: Connecting " << m_host << ":" << m_port << std::endl);
-            try {
-                socket().connect(m_host, m_port);
-            } catch (socket_exception e) {
-                terr("http_sender: " << e.what() << std::endl);
-                return false;
-            }
+            socket().connect(m_host, m_port);
         }
         m_request->set_header("Host", m_host);
         set_events(EV_WRITE);
@@ -104,7 +95,6 @@ public:
         }
         update_watcher(worker);
         start_watcher(worker);
-        return true;
     }
     
 private:

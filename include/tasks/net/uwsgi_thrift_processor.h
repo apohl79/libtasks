@@ -26,7 +26,6 @@
 
 #include <tasks/net/uwsgi_task.h>
 #include <tasks/net/uwsgi_thrift_transport.h>
-#include <tasks/logging.h>
 
 namespace tasks {
 namespace net {
@@ -62,7 +61,7 @@ public:
                 response().set_status("400 Bad Request");            
             }
         } catch (TTransportException& e) {
-            terr("TTransportException: " << e.what() << std::endl);
+            set_error(std::string("TTransportException: ") + std::string(e.what()));
             response().set_status("400 Bad Request");            
         }
 

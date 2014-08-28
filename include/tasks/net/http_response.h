@@ -46,7 +46,7 @@ public:
 
     void prepare_data_buffer();
     
-    bool read_data(net::socket& sock);
+    void read_data(net::socket& sock);
     
     void clear() {
         http_base::clear();
@@ -67,10 +67,10 @@ private:
     bool m_content_length_exists = false;
     bool m_chunked_enc = false;
 
-    bool parse_data();
-    bool parse_line();
-    bool parse_status();
-    bool parse_header();    
+    void parse_data();
+    void parse_line();
+    void parse_status();
+    void parse_header();
 };
 
 } // net

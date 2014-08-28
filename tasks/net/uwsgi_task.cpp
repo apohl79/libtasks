@@ -20,30 +20,32 @@
 #include <tasks/logging.h>
 #include <tasks/net/uwsgi_task.h>
 
+#include <sstream>
+
 namespace tasks {
 namespace net {
 
 bool uwsgi_task::handle_event(tasks::worker* /* worker */, int revents) {
     bool success = true;
-    if (EV_READ & revents) {
-        if (m_request.read_data(socket())) {
+    try {
+        if (EV_READ & revents) {
+            m_request.read_data(socket());
             if (m_request.done()) {
                 if (UWSGI_VARS == m_request.header().modifier1) {
                     success = handle_request();
                 } else {
                     // No suuport for anything else for now
-                    terr("uwsgi_task: unsupported uwsgi packet: "
-                         << "modifier1=" << (int) m_request.header().modifier1
-                         << " datasize=" << m_request.header().datasize
-                         << " modifier2=" << (int) m_request.header().modifier2
-                         << std::endl);
+                    std::ostringstream os;
+                    os << "uwsgi_task: unsupported uwsgi packet: "
+                       << "modifier1=" << (int) m_request.header().modifier1
+                       << " datasize=" << m_request.header().datasize
+                       << " modifier2=" << (int) m_request.header().modifier2;
+                    set_error(os.str());
+                    success = false;
                 }
             }
-        } else {
-            success = false;
-        }
-    } else if (EV_WRITE & revents) {
-        if (m_response.write_data(socket())) {
+        } else if (EV_WRITE & revents) {
+            m_response.write_data(socket());
             if (m_response.done()) {
                 finish_request();
 #if UWSGI_KEEPALIVE == 1
@@ -53,9 +55,10 @@ bool uwsgi_task::handle_event(tasks::worker* /* worker */, int revents) {
                 success = false;
 #endif
             }
-        } else {
-            success = false;
         }
+    } catch (tasks::tasks_exception& e) {
+        set_error(e.what());
+        success = false;
     }
     return success;
 }

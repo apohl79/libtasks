@@ -29,92 +29,63 @@ namespace net {
 
 std::string uwsgi_request::NO_VAL;
 
-bool uwsgi_request::read_header(socket& sock) {
-    bool success = false;
-    try {
-        std::streamsize bytes = sock.read((char*) &m_header, sizeof(m_header));
-        if (bytes == sizeof(m_header)) {
-            success = true;
-            tdbg("uwsgi_request::read_header: read header successfully, " << bytes << " bytes" << std::endl);
-        } else {
-            terr("uwsgi_request::read_header: error reading header" << std::endl);
-        }
-    } catch (socket_exception& e) {
-        terr("uwsgi_request::read_header: " << e.what() << std::endl);
+void uwsgi_request::read_header(socket& sock) {
+    std::streamsize bytes = sock.read((char*) &m_header, sizeof(m_header));
+    if (bytes != sizeof(m_header)) {
+        throw uwsgi_exception("uwsgi_request: error reading header");
     }
-    return success;
+    tdbg("uwsgi_request::read_header: read header successfully, " << bytes << " bytes" << std::endl);
 }
 
-bool uwsgi_request::read_vars(socket& sock) {
-    bool success = true;
-    try {
-        std::streamsize bytes = sock.read(m_data_buffer.ptr_write(), m_data_buffer.to_write());
-        if (bytes > 0) {
-            m_data_buffer.move_ptr_write(bytes);
-            tdbg("uwsgi_request::read_vars: read data successfully, " << bytes << " bytes" << std::endl);
-        }
-        if (!m_data_buffer.to_write()) {
-            if (UWSGI_VARS == m_header.modifier1) {
-                success = parse_vars();
-                if (success) {
-                    // Check if a http body needs to be read
-                    std::string content_len_s = var("CONTENT_LENGTH");
-                    if (NO_VAL != content_len_s) {
-                        std::size_t content_len_i = std::atoi(content_len_s.c_str());
-                        m_content_buffer.set_size(content_len_i);
-                        m_state = READ_CONTENT;
-                    } else {
-                        m_state = DONE;
-                    }
-                }
+void uwsgi_request::read_vars(socket& sock) {
+    std::streamsize bytes = sock.read(m_data_buffer.ptr_write(), m_data_buffer.to_write());
+    if (bytes > 0) {
+        m_data_buffer.move_ptr_write(bytes);
+        tdbg("uwsgi_request::read_vars: read data successfully, " << bytes << " bytes" << std::endl);
+    }
+    if (!m_data_buffer.to_write()) {
+        if (UWSGI_VARS == m_header.modifier1) {
+            parse_vars();
+            // Check if a http body needs to be read
+            std::string content_len_s = var("CONTENT_LENGTH");
+            if (NO_VAL != content_len_s) {
+                std::size_t content_len_i = std::atoi(content_len_s.c_str());
+                m_content_buffer.set_size(content_len_i);
+                m_state = READ_CONTENT;
+            } else {
+                m_state = DONE;
             }
         }
-    } catch (socket_exception& e) {
-        terr("uwsgi_request::read_vars: " << e.what() << std::endl);
-        success = false;
     }
-    return success;
 }
 
-bool uwsgi_request::read_content(socket& sock) {
-    bool success = true;
-    try {
-        std::streamsize bytes = sock.read(m_content_buffer.ptr_write(), m_content_buffer.to_write());
-        if (bytes > 0) {
-            m_content_buffer.move_ptr_write(bytes);
-            tdbg("uwsgi_request::read_content: read data successfully, " << bytes << " bytes" << std::endl);
-        }
-    } catch (socket_exception& e) {
-        terr("uwsgi_request::read_content: " << e.what() << std::endl);
-        success = false;
+void uwsgi_request::read_content(socket& sock) {
+    std::streamsize bytes = sock.read(m_content_buffer.ptr_write(), m_content_buffer.to_write());
+    if (bytes > 0) {
+        m_content_buffer.move_ptr_write(bytes);
+        tdbg("uwsgi_request::read_content: read data successfully, " << bytes << " bytes" << std::endl);
     }
-    if (success && !m_content_buffer.to_write()) {
+    if (!m_content_buffer.to_write()) {
         m_state = DONE;
-        // Move the pointer the start to enable reading from the buffer. 
-        //m_content_buffer.move_ptr_abs(0);
     }
-    return success;
 }
 
-bool uwsgi_request::read_data(socket& sock) {
-    bool success = true;
+void uwsgi_request::read_data(socket& sock) {
     if (READY == m_state) {
         m_state = READ_HEADER;
-        if ((success = read_header(sock))) {
-            m_state = READ_DATA;
-            m_data_buffer.set_size(m_header.datasize);
-        }
+        read_header(sock);
+        m_state = READ_DATA;
+        m_data_buffer.set_size(m_header.datasize);
     }
-    if (success && READ_DATA == m_state) {
-        success = read_vars(sock);
+    if (READ_DATA == m_state) {
+        read_vars(sock);
     }
-    if (success && READ_CONTENT == m_state) {
-        success = read_content(sock);
+    if (READ_CONTENT == m_state) {
+        read_content(sock);
     }
-    return success;
 }
 
-bool uwsgi_request::parse_vars() {
+void uwsgi_request::parse_vars() {
     std::size_t pos = 0;
     while (pos < m_data_buffer.size()) {
         uint16_t key_len= *((uint16_t*) m_data_buffer.ptr(pos));
@@ -127,7 +98,6 @@ bool uwsgi_request::parse_vars() {
         }
         pos = val_start + val_len;
     }
-    return true;
 }
 
 } // net

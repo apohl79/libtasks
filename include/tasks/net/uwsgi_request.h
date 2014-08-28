@@ -26,6 +26,7 @@
 #include <vector>
 #include <iostream>
 
+#include <tasks/tasks_exception.h>
 #include <tasks/net/socket.h>
 #include <tasks/net/uwsgi_structs.h>
 #include <tasks/net/io_state.h>
@@ -33,7 +34,12 @@
 
 namespace tasks {
 namespace net {
-        
+
+class uwsgi_exception : public tasks::tasks_exception {
+public:
+    uwsgi_exception(std::string what) : tasks::tasks_exception(what) {}
+};
+
 class uwsgi_request {
 public:
     typedef std::unordered_map<std::string, std::string> uwsgi_vars_t;
@@ -78,7 +84,7 @@ public:
         return m_content_buffer.read(data, size);
     }
 
-    bool read_data(socket& sock);
+    void read_data(socket& sock);
 
     inline bool done() const {
         return m_state == DONE;
@@ -105,10 +111,10 @@ private:
     io_state m_state = READY;
     uwsgi_vars_t m_vars;
 
-    bool read_header(socket& sock);
-    bool read_vars(socket& sock);
-    bool read_content(socket& sock);
-    bool parse_vars();
+    void read_header(socket& sock);
+    void read_vars(socket& sock);
+    void read_content(socket& sock);
+    void parse_vars();
 };
 
 } // net

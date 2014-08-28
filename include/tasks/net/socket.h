@@ -26,6 +26,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <tasks/tasks_exception.h>
+
 #ifdef __linux__
 #define SENDTO_FLAGS MSG_NOSIGNAL
 #define RECVFROM_FLAGS MSG_NOSIGNAL
@@ -39,18 +41,12 @@ struct sockaddr_in;
 namespace tasks {
 namespace net {
 
-class socket_exception : public std::exception {
+class socket_exception : public tasks::tasks_exception {
 public:
-    socket_exception(std::string what) : m_what(what) {}
-    const char* what() const noexcept {
-        return m_what.c_str();
-    }
-    
-private:
-    std::string m_what;
+    socket_exception(std::string what) : tasks::tasks_exception(what) {}
 };
 
-enum socket_type {
+enum class socket_type {
     TCP,
     UDP
 };
@@ -58,18 +54,18 @@ enum socket_type {
 class socket {
 public:
     socket(int fd) : m_fd(fd) {}
-    socket(socket_type = TCP);
+    socket(socket_type = socket_type::TCP);
     
     inline int fd() const {
         return m_fd;
     }
 
     inline bool udp() const {
-        return m_type == UDP;
+        return m_type == socket_type::UDP;
     }
 
     inline bool tcp() const {
-        return m_type == TCP;
+        return m_type == socket_type::TCP;
     }
 
     inline socket_type type() const {
@@ -86,36 +82,36 @@ public:
 
     // bind for udp sockets. This method can be used to bind udp sockets. For tcp servers
     // socket::listen has to be called.
-    void bind(int port, std::string ip = "") throw(socket_exception);
+    void bind(int port, std::string ip = "");
 
     // listen for unix domain sockets
-    void listen(std::string path, int queue_size = 128) throw(socket_exception);
+    void listen(std::string path, int queue_size = 128);
     
     // listen for tcp sockets
-    void listen(int port, std::string ip = "", int queue_size = 128) throw(socket_exception);
+    void listen(int port, std::string ip = "", int queue_size = 128);
 
-    socket accept() throw(socket_exception);
+    socket accept();
     
     // connect a domain socket
-    void connect(std::string path) throw(socket_exception);
+    void connect(std::string path);
 
     // connect via tcp
-    void connect(std::string host, int port) throw(socket_exception);
+    void connect(std::string host, int port);
 
     void shutdown();
     void close();
     
     std::streamsize write(const char* data, std::size_t len,
-                          int port = -1, std::string ip = "") throw(socket_exception);
-    std::streamsize read(char* data, std::size_t len) throw(socket_exception);
+                          int port = -1, std::string ip = "");
+    std::streamsize read(char* data, std::size_t len);
 
 private:
     int m_fd = -1;
-    socket_type m_type = TCP;
+    socket_type m_type = socket_type::TCP;
     bool m_blocking = false;
     std::shared_ptr<struct sockaddr_in> m_addr;
 
-    void bind(int port, std::string ip, bool udp) throw(socket_exception);
+    void bind(int port, std::string ip, bool udp);
     void init_sockaddr(int port, std::string ip = "");
 
 };

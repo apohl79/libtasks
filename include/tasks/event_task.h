@@ -21,13 +21,14 @@
 #define _TASKS_EVENT_TASK_H_
 
 #include <tasks/task.h>
+#include <tasks/error_base.h>
 
 namespace tasks {
 
 // Signals to enter a worker thread context. Passed to worker::signal_call().
 typedef std::function<void(struct ev_loop*)> task_func_t;
 
-class event_task : public task {
+class event_task : public task, public error_base {
 public:
     virtual ~event_task() {}
 
@@ -39,7 +40,6 @@ public:
     virtual void init_watcher() = 0;
     virtual void stop_watcher(worker* worker) = 0;
     virtual void start_watcher(worker* worker) = 0;
-
 };
 
 } // tasks

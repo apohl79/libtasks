@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <tasks/tasks_exception.h>
 #include <tasks/net/socket.h>
 #include <tasks/net/io_state.h>
 #include <tasks/tools/buffer.h>
@@ -37,6 +38,11 @@
 
 namespace tasks {
 namespace net {
+
+class http_exception : public tasks::tasks_exception {
+public:
+    http_exception(std::string what) : tasks::tasks_exception(what) {}
+};
 
 class http_base {
 public:
@@ -104,9 +110,7 @@ public:
 
     virtual void prepare_data_buffer() = 0;
     
-    bool write_data(socket& sock);
-
-    bool read_data(socket& sock);
+    void write_data(socket& sock);
 
     inline void print() const {
         for (auto &kv : m_headers) {
@@ -138,8 +142,8 @@ protected:
     std::istream m_content_istream;
     std::ostream m_content_ostream;
 
-    bool write_headers(socket& sock);
-    bool write_content(socket& sock);
+    void write_headers(socket& sock);
+    void write_content(socket& sock);
 };
 
 } // net

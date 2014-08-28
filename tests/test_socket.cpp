@@ -104,12 +104,12 @@ void test_socket::udp() {
     int port = 22335;
     
     // create srv socket
-    tasks::net::socket* srv = new tasks::net::socket(tasks::net::UDP);
+    tasks::net::socket* srv = new tasks::net::socket(tasks::net::socket_type::UDP);
     srv->set_blocking();
     srv->bind(port);
 
     // create client socket
-    tasks::net::socket clnt(tasks::net::UDP);
+    tasks::net::socket clnt(tasks::net::socket_type::UDP);
     clnt.set_blocking();
 
     // read/write data

@@ -36,7 +36,15 @@ void test_http_sender::requests() {
     sender->on_finish([this]{ m_cond.notify_one(); });
 
     // Connect to remote
-    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
+    bool send_ok = true;
+    std::string error;
+    try {
+        sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080));
+    } catch (tasks::net::socket_exception& e) {
+        send_ok = false;
+        error = e.what();
+    }
+    CPPUNIT_ASSERT_MESSAGE(std::string("send error: ") + error, send_ok);
 
     // wait for the response
     std::unique_lock<std::mutex> lock(m_mutex);
@@ -50,7 +58,17 @@ void test_http_sender::requests() {
     // Second run
     sender = new tasks::net::http_sender<test_handler>();
     sender->on_finish([this]{ m_cond.notify_one(); });
-    CPPUNIT_ASSERT(sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080)));
+
+    send_ok = true;
+    error = "";
+    try {
+        sender->send(std::make_shared<tasks::net::http_request>("localhost", "/", 18080));
+    } catch (tasks::net::socket_exception& e) {
+        send_ok = false;
+        error = e.what();
+    }
+    CPPUNIT_ASSERT_MESSAGE(std::string("send error: ") + error, send_ok);
+
     std::unique_lock<std::mutex> lock2(m_mutex);
     m_cond.wait(lock2);
     CPPUNIT_ASSERT_MESSAGE(std::string("g_status_code = ") + std::to_string(g_status_code), g_status_code == 404);

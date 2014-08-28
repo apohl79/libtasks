@@ -37,17 +37,20 @@ public:
 int main(int argc, char** argv) {
     // initialize the dispatcher first
     auto disp = tasks::dispatcher::instance();
+    disp->start();
     auto* sender = new tasks::net::http_sender<test_handler>();
     // after sending the request we terminate the dispatcher and exit
     sender->on_finish([disp]{ disp->terminate(); });
     auto request = std::make_shared<tasks::net::http_request>("www.google.com", "/");
-    if (sender->send(request)) {
-        disp->run(1, sender);
-    } else {
+    std::cout << "sending" << std::endl;
+    try {
+        sender->send(request);
+    } catch (tasks::tasks_exception& e) {
+        std::cerr << "error: " << e.what() << std::endl;
         delete sender;
         // shutdown the dispatcher
         disp->terminate();
-        disp->join();
     }
+    disp->join();
     return 0;
 }

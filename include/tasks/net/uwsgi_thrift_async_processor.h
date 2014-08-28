@@ -30,7 +30,6 @@
 
 #include <tasks/net/uwsgi_task.h>
 #include <tasks/net/uwsgi_thrift_transport.h>
-#include <tasks/logging.h>
 #include <tasks/exec.h>
 
 using namespace apache::thrift;
@@ -63,7 +62,7 @@ public:
         handler->set_uwsgi_task(this);
         handler->on_finish([this, handler, worker, out_protocol] {
                 if (handler->error()) {
-                    write_thrift_error(std::string("Handler Error: ") + handler->error_string(),
+                    write_thrift_error(std::string("Handler Error: ") + handler->error_message(),
                                        handler->service_name(), out_protocol);
                 } else {
                     // Fill the response back in.
