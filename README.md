@@ -94,6 +94,7 @@ public:
 };
 
 // Now we can setup the server
-acceptor<uwsgi_thrift_processor<IpServiceProcessor, ip_service> > srv(12345);
-dispatcher::instance()->run(1, &srv);
+dispatcher::instance()->start();
+dispatcher::instance()->add_task(new acceptor<uwsgi_thrift_processor<IpServiceProcessor, ip_service>>(12345));
+dispatcher::instance()->join();
 ```
