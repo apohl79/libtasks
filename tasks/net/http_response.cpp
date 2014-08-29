@@ -50,11 +50,11 @@ void http_response::prepare_data_buffer() {
 
 // We are reading things into the content buffer only.
 void http_response::read_data(socket& sock) {
-    if (READY == m_state) {
+    if (io_state::READY == m_state) {
         m_content_buffer.set_size(READ_BUFFER_SIZE_BLOCK);
-        m_state = READ_DATA;
+        m_state = io_state::READ_DATA;
     }
-    if (DONE != m_state) {
+    if (io_state::DONE != m_state) {
         std::streamsize towrite = 0, bytes = 0;
         do {
             towrite = m_content_buffer.to_write() - 1;
@@ -65,7 +65,7 @@ void http_response::read_data(socket& sock) {
             bytes = sock.read(m_content_buffer.ptr_write(), towrite);
             if (bytes > 0) {
                 m_content_buffer.move_ptr_write(bytes);
-                if (READ_DATA == m_state) {
+                if (io_state::READ_DATA == m_state) {
                     // Terminate the string for parsing
                     *(m_content_buffer.ptr_write()) = 0;
                     parse_data();
@@ -75,7 +75,7 @@ void http_response::read_data(socket& sock) {
                     *(m_content_buffer.ptr_write()) = 0;
                     m_content_buffer.set_size(m_content_start + m_content_length);
                     m_content_buffer.move_ptr_read_abs(m_content_start);
-                    m_state = DONE;
+                    m_state = io_state::DONE;
                 }
             }
         } while (towrite == bytes);
@@ -108,7 +108,7 @@ void http_response::parse_data() {
                     m_content_start++;
                 }
                 tdbg("http_response: Content starts at " << m_content_start << std::endl);
-                m_state = READ_CONTENT;
+                m_state = io_state::READ_CONTENT;
             }
         }
     } while (nullptr != eol && 0 == m_content_start);

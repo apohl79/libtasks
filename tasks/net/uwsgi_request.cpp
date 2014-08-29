@@ -51,9 +51,9 @@ void uwsgi_request::read_vars(socket& sock) {
             if (NO_VAL != content_len_s) {
                 std::size_t content_len_i = std::atoi(content_len_s.c_str());
                 m_content_buffer.set_size(content_len_i);
-                m_state = READ_CONTENT;
+                m_state = io_state::READ_CONTENT;
             } else {
-                m_state = DONE;
+                m_state = io_state::DONE;
             }
         }
     }
@@ -66,21 +66,21 @@ void uwsgi_request::read_content(socket& sock) {
         tdbg("uwsgi_request::read_content: read data successfully, " << bytes << " bytes" << std::endl);
     }
     if (!m_content_buffer.to_write()) {
-        m_state = DONE;
+        m_state = io_state::DONE;
     }
 }
 
 void uwsgi_request::read_data(socket& sock) {
-    if (READY == m_state) {
-        m_state = READ_HEADER;
+    if (io_state::READY == m_state) {
+        m_state = io_state::READ_HEADER;
         read_header(sock);
-        m_state = READ_DATA;
+        m_state = io_state::READ_DATA;
         m_data_buffer.set_size(m_header.datasize);
     }
-    if (READ_DATA == m_state) {
+    if (io_state::READ_DATA == m_state) {
         read_vars(sock);
     }
-    if (READ_CONTENT == m_state) {
+    if (io_state::READ_CONTENT == m_state) {
         read_content(sock);
     }
 }

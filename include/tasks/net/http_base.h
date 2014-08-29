@@ -120,7 +120,7 @@ public:
     }
 
     inline bool done() const {
-        return m_state == DONE;
+        return m_state == io_state::DONE;
     }
 
     virtual void clear() {
@@ -130,13 +130,13 @@ public:
         if (m_headers.size() > 0) {
             m_headers.clear();
         }
-        m_state = READY;
+        m_state = io_state::READY;
     }
     
 protected:
     tasks::tools::buffer m_data_buffer;
     tasks::tools::buffer m_content_buffer;
-    io_state m_state = READY;
+    io_state m_state = io_state::READY;
     std::unordered_map<std::string, std::string> m_headers;
     std::size_t m_content_length = 0;
     std::istream m_content_istream;

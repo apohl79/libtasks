@@ -87,7 +87,7 @@ public:
     void read_data(socket& sock);
 
     inline bool done() const {
-        return m_state == DONE;
+        return m_state == io_state::DONE;
     }
 
     inline uwsgi_packet_header& header() {
@@ -95,7 +95,7 @@ public:
     }
 
     inline void clear() {
-        m_state = READY;
+        m_state = io_state::READY;
         m_header = {0, 0, 0};
         m_data_buffer.clear();
         m_content_buffer.clear();
@@ -108,7 +108,7 @@ private:
     uwsgi_packet_header m_header;
     tasks::tools::buffer m_data_buffer;
     tasks::tools::buffer m_content_buffer;
-    io_state m_state = READY;
+    io_state m_state = io_state::READY;
     uwsgi_vars_t m_vars;
 
     void read_header(socket& sock);

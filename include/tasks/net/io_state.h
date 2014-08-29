@@ -23,7 +23,7 @@
 namespace tasks {
 namespace net {
 
-enum io_state : uint8_t {
+enum class io_state : uint8_t {
     READY,
     DONE,
     READ_HEADER,

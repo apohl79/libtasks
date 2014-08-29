@@ -30,26 +30,26 @@ const std::string http_base::NO_VAL;
 
 void http_base::write_data(socket& sock) {
     // Fill the data buffer in ready state
-    if (READY == m_state) {
+    if (io_state::READY == m_state) {
         prepare_data_buffer();
-        m_state = WRITE_DATA;
+        m_state = io_state::WRITE_DATA;
     }
     // Write data buffer
-    if (WRITE_DATA == m_state) {
+    if (io_state::WRITE_DATA == m_state) {
         write_headers(sock);
         if (!m_data_buffer.to_read()) {
             if (m_content_buffer.size()) {
-                m_state = WRITE_CONTENT;
+                m_state = io_state::WRITE_CONTENT;
             } else {
-                m_state = DONE;
+                m_state = io_state::DONE;
             }
         }
     }
     // Write content buffer
-    if (WRITE_CONTENT == m_state) {
+    if (io_state::WRITE_CONTENT == m_state) {
         write_content(sock);
         if (!m_content_buffer.to_read()) {
-            m_state = DONE;
+            m_state = io_state::DONE;
         }
     }
 }
