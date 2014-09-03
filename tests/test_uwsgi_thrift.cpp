@@ -52,10 +52,8 @@ void test_uwsgi_thrift::request() {
     using namespace tasks;
     using namespace tasks::net;
 
-    auto srv = new acceptor<uwsgi_thrift_processor<IpServiceProcessor /* Thrift generated */,
-                                                   ip_service         /* Service handler  */
-                                                   > > (12345);
-    tasks::net_io_task::add_task(srv);
+    m_srv.reset(new acceptor<uwsgi_thrift_processor<IpServiceProcessor, ip_service>>(12345));
+    tasks::net_io_task::add_task(m_srv.get());
 
     using namespace apache::thrift::protocol;
     using namespace apache::thrift::transport;
@@ -89,6 +87,4 @@ void test_uwsgi_thrift::request() {
         success = false;
     }
     CPPUNIT_ASSERT(success);
-
-    srv->finish();
 }

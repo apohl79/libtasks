@@ -61,5 +61,9 @@ public:
 protected:
     void request_finish_in_worker_ctx();
     void request_finish_exec();
-    void request(net_io_task* srv, std::string url);
+    void request(std::string url);
+
+private:
+    std::unique_ptr<net_io_task> m_srv1;
+    std::unique_ptr<net_io_task> m_srv2;
 };

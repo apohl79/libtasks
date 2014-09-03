@@ -44,4 +44,7 @@ public:
 
 protected:
     void request();
+
+private:
+    std::unique_ptr<tasks::net_io_task> m_srv;
 };

@@ -18,6 +18,7 @@
  */
 
 #include <arpa/inet.h>
+#include <csignal>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/THttpClient.h>
 #include <boost/shared_ptr.hpp>
@@ -85,18 +86,18 @@ void ip_service_async2::service(std::shared_ptr<args_t> args) {
 }
 
 void test_uwsgi_thrift_async::request_finish_in_worker_ctx() {
-    auto srv = new acceptor<uwsgi_thrift_async_processor<ip_service_async1> >(12346);
-    request(srv, "/test2");
+    m_srv1.reset(new acceptor<uwsgi_thrift_async_processor<ip_service_async1> >(12346));
+    tasks::net_io_task::add_task(m_srv1.get());
+    request("/test2");
 }
 
 void test_uwsgi_thrift_async::request_finish_exec() {
-    auto srv = new acceptor<uwsgi_thrift_async_processor<ip_service_async2> >(12347);
-    request(srv, "/test3");
+    m_srv2.reset(new acceptor<uwsgi_thrift_async_processor<ip_service_async2> >(12347));
+    tasks::net_io_task::add_task(m_srv2.get());
+    request("/test3");
 }
 
-void test_uwsgi_thrift_async::request(net_io_task* srv, std::string url) {
-    tasks::net_io_task::add_task(srv);
-
+void test_uwsgi_thrift_async::request(std::string url) {
     using namespace apache::thrift::protocol;
     using namespace apache::thrift::transport;
     boost::shared_ptr<THttpClient> transport(new THttpClient("localhost", 18080, url));
@@ -125,7 +126,6 @@ void test_uwsgi_thrift_async::request(net_io_task* srv, std::string url) {
 
         transport->close();
     } catch (TTransportException& e) {
-        srv->finish();
         CPPUNIT_ASSERT_MESSAGE(std::string("TTransportException: ") + e.what(), false);
     }
 
@@ -139,11 +139,8 @@ void test_uwsgi_thrift_async::request(net_io_task* srv, std::string url) {
 
         transport->close();
 
-        srv->finish();
         CPPUNIT_ASSERT_MESSAGE("TTransportException expected", false);
     } catch (TTransportException& e) {
         CPPUNIT_ASSERT(e.what() == std::string("Bad Status: HTTP/1.1"));
     }
-
-    srv->finish();
 }
