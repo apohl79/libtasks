@@ -37,22 +37,22 @@ class acceptor : public net_io_task {
 public:
     acceptor(int port) : net_io_task(EV_READ) {
         // Create a non-blocking master socket.
-        tdbg("acceptor: listening on port " << port << std::endl);
+        tdbg("acceptor(" << this << "): listening on port " << port << std::endl);
         try {
             socket().listen(port);
         } catch (socket_exception& e) {
-            terr("acceptor: " << e.what() << std::endl);
+            terr("acceptor(" << this << "): " << e.what() << std::endl);
             assert(false);
         }
     }
 
     acceptor(std::string path) : net_io_task(EV_READ) {
         // Create a non-blocking master socket.
-        tdbg("acceptor: listening on unix:" << path << std::endl);
+        tdbg("acceptor(" << this << "): listening on unix:" << path << std::endl);
         try {
             socket().listen(path);
         } catch (socket_exception& e) {
-            terr("acceptor: " << e.what() << std::endl);
+            terr("acceptor(" << this << "): " << e.what() << std::endl);
             assert(false);
         }
     }
@@ -64,7 +64,7 @@ public:
     bool handle_event(worker* worker, int /* revents */)  {
         try {
             net::socket client = socket().accept();
-            tdbg("acceptor: new client fd " << client.fd() << std::endl);
+            tdbg("acceptor(" << this << "): new client fd " << client.fd() << std::endl);
             T* task = new T(client);
             // Note: Calling net_io_tasks::add_task will add the client fd to the event loop
             //       from the context of the current worker thread. If you are using multi
@@ -80,7 +80,7 @@ public:
             //       instead.
             add_task(worker, task);
         } catch (socket_exception& e) {
-            terr("acceptor: " << e.what() << std::endl);
+            terr("acceptor(" << this << "): " << e.what() << std::endl);
             assert(false);
         }
         return true;
