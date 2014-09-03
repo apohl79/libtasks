@@ -39,7 +39,19 @@ Building
 
 To build libtasks you will need cmake.
 
-### The following options are possible at the moment:
+```
+$ git clone ...
+$ cd libtasks
+$ mkdir build
+$ cd build
+$ cmake <options> ..
+$ make
+$ sudo make test
+$ sudo make install
+```
+Note: To run the tests you need to have nginx installed.
+
+### The following cmake options are possible at the moment:
 
 - -DCMAKE_BUILD_TYPE=<type> - if type is "Debug" the library will be build with debug logging enabled. Default is "Release".
 - -DDISABLE_TESTS=<option>  - if option is "y" or "Y" the tests will not be build. Default is N.
@@ -95,6 +107,7 @@ public:
 
 // Now we can setup the server
 dispatcher::instance()->start();
-dispatcher::instance()->add_task(new acceptor<uwsgi_thrift_processor<IpServiceProcessor, ip_service>>(12345));
+dispatcher::instance()->add_task(new acceptor<uwsgi_thrift_processor<IpServiceProcessor,
+                                                                     ip_service>>(12345));
 dispatcher::instance()->join();
 ```
