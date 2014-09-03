@@ -25,8 +25,8 @@ if(NOT(DISABLE_TESTS MATCHES "y" OR DISABLE_TESTS MATCHES "Y"))
   enable_testing()
   add_test(NAME UnitTests_single_loop
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests
-    COMMAND ${PROJECT_SOURCE_DIR}/tests/runtests.sh ./libtasks-tests ${PROJECT_SOURCE_DIR}/tests single)
+    COMMAND bash ${PROJECT_SOURCE_DIR}/tests/runtests.sh ./libtasks-tests ${PROJECT_SOURCE_DIR}/tests single)
   add_test(NAME UnitTests_multi_loop
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests
-    COMMAND ${PROJECT_SOURCE_DIR}/tests/runtests.sh ./libtasks-tests ${PROJECT_SOURCE_DIR}/tests multi)
+    COMMAND bash ${PROJECT_SOURCE_DIR}/tests/runtests.sh ./libtasks-tests ${PROJECT_SOURCE_DIR}/tests multi)
 endif(NOT(DISABLE_TESTS MATCHES "y" OR DISABLE_TESTS MATCHES "Y"))
