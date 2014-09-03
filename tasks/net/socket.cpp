@@ -51,11 +51,12 @@ void socket::listen(std::string path, int queue_size) {
             throw socket_exception("fcntl failed: " + std::string(std::strerror(errno)));
         }
     }
-    struct sockaddr_un addr;
+    struct sockaddr_un addr;;
+    bzero(&addr, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     std::strcpy(addr.sun_path, path.c_str());
     unlink(addr.sun_path);
-#ifndef _OS_DARWIN_
+#ifdef _OS_LINUX_
     if (::bind(m_fd, (struct sockaddr *) &addr, sizeof(addr.sun_family) + path.length())) {
         throw socket_exception("bind failed: " + std::string(std::strerror(errno)));
     }
@@ -124,6 +125,7 @@ void socket::init_sockaddr(int port, std::string ip) {
 
 socket socket::accept() {
     struct sockaddr_in addr;
+    bzero(&addr, sizeof(struct sockaddr_in));
     socklen_t len = sizeof(addr);
     int client = ::accept(m_fd, (struct sockaddr *) &addr, &len);
     if (client < 0) {
@@ -136,10 +138,11 @@ void socket::connect(std::string path) {
     m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
     assert(m_fd > 0);
     struct sockaddr_un addr;
+    bzero(&addr, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     std::strcpy(addr.sun_path, path.c_str());
     
-#ifndef _OS_DARWIN_
+#ifdef _OS_LINUX_
     if (::connect(m_fd, (struct sockaddr *) &addr, sizeof(addr.sun_family) + path.length())) {
         throw socket_exception("connect failed: " + std::string(std::strerror(errno)));
     }
@@ -164,11 +167,8 @@ void socket::connect(std::string host, int port) {
     }
     m_fd = ::socket(AF_INET, SOCK_STREAM, 0);
     assert(m_fd > 0);
-#ifndef _OS_DARWIN_
-    struct sockaddr_in addr = {0, 0, 0, {0}};
-#else
-    struct sockaddr_in addr = {0, 0, 0, {0}, {0}};
-#endif
+    struct sockaddr_in addr;
+    bzero(&addr, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
     std::memcpy(&addr.sin_addr, remote->h_addr_list[0], remote->h_length);
     addr.sin_port = htons(port);
