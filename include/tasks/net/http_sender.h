@@ -86,6 +86,7 @@ public:
             // Connect
             tdbg("http_sender: Connecting " << m_host << ":" << m_port << std::endl);
             socket().connect(m_host, m_port);
+            init_watcher();
         }
         m_request->set_header("Host", m_host);
         set_events(EV_WRITE);

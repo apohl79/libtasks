@@ -55,9 +55,7 @@ public:
         return m_io.get();
     }
 
-    void init_watcher() {
-        ev_io_set(m_io.get(), m_socket.fd(), m_events);
-    }
+    void init_watcher();
 
     // Start a watcher in the context of the given worker
     void start_watcher(worker* worker);
@@ -81,6 +79,7 @@ protected:
 
 private:
     std::unique_ptr<ev_io> m_io;
+    bool m_watcher_initialized = false;
     net::socket m_socket;
     int m_events = EV_UNDEF;
     bool m_change_pending = false;
