@@ -26,10 +26,12 @@
 namespace tasks {
 namespace tools {
 
+#ifndef CACHE_LINE_SIZE
+#define CACHE_LINE_SIZE 64
+#endif
+
 /*
  * A thread safe queue
- *
- * NOTE: CACHE_LINE_SIZE needs to be defined.
  *
  * Thx Herb Sutter for this implementation!
  */
