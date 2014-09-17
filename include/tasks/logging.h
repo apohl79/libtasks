@@ -36,7 +36,7 @@ extern std::mutex g_log_mutex;
 #endif
 
 // Using the C time variants as std::put_time is not implemented yet.
-#define tlog(s,m)                                                       \
+#define tlog(s, m)                                                      \
     {                                                                   \
         _LOGMUTEX;                                                      \
         s << "["                                                        \
@@ -52,11 +52,11 @@ extern std::mutex g_log_mutex;
     }
 
 #ifdef _DEBUG_OUTPUT
-#define tdbg(m) tlog(std::clog,m)
+#define tdbg(m) tlog(std::clog, m)
 #else
 #define tdbg(m)
 #endif
 
-#define terr(m) tlog(std::clog,m)
+#define terr(m) tlog(std::clog, m)
 
 #endif // _TASKS_LOGGING_H_

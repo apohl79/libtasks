@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -35,7 +35,7 @@ timer_task::timer_task(double after, double repeat) : m_after(after), m_repeat(r
 timer_task::~timer_task() {
     tdbg(get_string() << ": dtor" << std::endl);
 }
-	
+
 void timer_task::start_watcher(worker* worker) {
     worker->signal_call([this] (struct ev_loop* loop) {
             if (!ev_is_active(m_timer.get())) {

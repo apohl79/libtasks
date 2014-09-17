@@ -46,7 +46,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
   endif(NOT DISABLE_LOGMUTEX MATCHES "Y" OR NOT DISABLE_LOGMUTEX MATCHES "y")
 endif(CMAKE_BUILD_TYPE MATCHES "Debug")
 
-add_definitions(-Wall -Wextra -std=c++1y -pthread)
+add_definitions(-Wall -Wextra -Wlong-long -Wmissing-braces -std=c++1y -pthread)
 
 find_package(PkgConfig)
 find_package(Boost 1.53.0 REQUIRED system thread REQUIRED)
