@@ -16,6 +16,7 @@ find_program(VERA++ vera++)
 if(VERA++)
   execute_process(COMMAND ${VERA++} --version OUTPUT_VARIABLE VERA++_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
   if(VERA++_VERSION VERSION_GREATER "1.2.0")
+    file(GLOB_RECURSE tasks_srcs "tasks/*.cpp")
     add_custom_target(StyleCheck ALL
       ${VERA++} -d -e -x stylecheck.xml
         -R F001 -R F002 -R L002 -R T001 -R T003 -R T004 -R T005
@@ -23,6 +24,7 @@ if(VERA++)
       ${tasks_headers}
       ${net_headers}
       ${tools_headers}
+      ${tasks_srcs}
     )
   else(VERA++_VERSION VERSION_GREATER "1.2.0")
     message(WARNING "Style checks deactivated: vera++ version >=1.2.1 required but ${VERA++_VERSION} found")
