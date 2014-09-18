@@ -21,6 +21,7 @@
 #include <csignal>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/THttpClient.h>
+#include <thrift/transport/TSocket.h>
 #include <boost/shared_ptr.hpp>
 
 #include <tasks/net/acceptor.h>
@@ -97,10 +98,44 @@ void test_uwsgi_thrift_async::request_finish_exec() {
     request("/test3");
 }
 
+void test_uwsgi_thrift_async::request_finish_exec_timeout() {
+    m_srv3.reset(new acceptor<uwsgi_thrift_async_processor<ip_service_async2> >(12348));
+    tasks::net_io_task::add_task(m_srv3.get());
+
+    using namespace apache::thrift::protocol;
+    using namespace apache::thrift::transport;
+    boost::shared_ptr<THttpClient> transport(new THttpClient("Localhost", 18080, "/test4"));
+    boost::shared_ptr<TBinaryProtocol> protocol(new TBinaryProtocol(transport));
+    IpServiceClient client(protocol);
+
+    // set a low receive timeout
+    struct Socket : THttpClient {
+        // can access protected member
+        static boost::shared_ptr<TTransport> get(THttpClient* x) { return x->*(&Socket::transport_); }
+    };
+    boost::shared_ptr<TSocket> tsock = boost::dynamic_pointer_cast<TSocket>(Socket::get(transport.get()));
+    tsock->setRecvTimeout(100);
+
+    try {
+        transport->open();
+
+        int32_t ip = 123456789;
+        ipv6_type ipv6;
+        response_type r;
+        client.lookup(r, ip, ipv6);
+
+        transport->close();
+
+        CPPUNIT_ASSERT_MESSAGE("TTransportException expected", false);
+    } catch (TTransportException& e) {
+        CPPUNIT_ASSERT_MESSAGE(e.what(), e.what() == std::string("THRIFT_EAGAIN (timed out)"));
+    }
+}
+
 void test_uwsgi_thrift_async::request(std::string url) {
     using namespace apache::thrift::protocol;
     using namespace apache::thrift::transport;
-    boost::shared_ptr<THttpClient> transport(new THttpClient("localhost", 18080, url));
+    boost::shared_ptr<THttpClient> transport(new THttpClient("Localhost", 18080, url));
     boost::shared_ptr<TBinaryProtocol> protocol(new TBinaryProtocol(transport));
     IpServiceClient client(protocol);
 

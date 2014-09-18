@@ -40,7 +40,7 @@ namespace tasks {
 namespace net {
 
 template<class handler_type>
-class uwsgi_thrift_async_processor : public tasks::net::uwsgi_task {
+class uwsgi_thrift_async_processor : public uwsgi_task {
 public:
     typedef uwsgi_thrift_transport<uwsgi_request> in_transport_type;
     typedef uwsgi_thrift_transport<http_response> out_transport_type;
@@ -80,6 +80,11 @@ public:
                         send_response();
                     });
                 delete handler;
+                std::lock_guard<std::mutex> lock(m_dispose_mtx);
+                m_handler_active = false;
+                if (m_dispose_me) {
+                    uwsgi_task::dispose(worker);
+                }
             });
 
         try {
@@ -98,6 +103,7 @@ public:
                 args->read(in_protocol.get());
                 in_protocol->readMessageEnd();
                 in_protocol->getTransport()->readEnd();
+                m_handler_active = true;
                 handler->service(args);
             }
         } catch (TException& e) {
@@ -124,8 +130,20 @@ public:
         out_protocol->getTransport()->flush();
     }
 
+    virtual void dispose(worker* worker) {
+        std::lock_guard<std::mutex> lock(m_dispose_mtx);
+        if (!m_handler_active) {
+            uwsgi_task::dispose(worker);
+        } else {
+            m_dispose_me = true;
+        }
+    }
+
 private:
     int32_t m_seqid = 0;
+    std::mutex m_dispose_mtx;
+    bool m_handler_active = false;
+    bool m_dispose_me = false;
 };
 
 } // net

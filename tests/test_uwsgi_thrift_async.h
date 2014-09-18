@@ -52,6 +52,7 @@ class test_uwsgi_thrift_async : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(test_uwsgi_thrift_async);
     CPPUNIT_TEST(request_finish_in_worker_ctx);
     CPPUNIT_TEST(request_finish_exec);
+    CPPUNIT_TEST(request_finish_exec_timeout);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -61,9 +62,11 @@ public:
 protected:
     void request_finish_in_worker_ctx();
     void request_finish_exec();
+    void request_finish_exec_timeout();
     void request(std::string url);
 
 private:
     std::unique_ptr<net_io_task> m_srv1;
     std::unique_ptr<net_io_task> m_srv2;
+    std::unique_ptr<net_io_task> m_srv3;
 };
