@@ -79,12 +79,15 @@ public:
                 worker->signal_call([this] (struct ev_loop*) {
                         send_response();
                     });
-                delete handler;
+                // GCC 4.8.2 shows some weired behavior uning lambdas here. After deleting the handler ptr this
+                // is set to 0x0. Also accessing base class methods is broken and leads to internal compiler
+                // errors.
                 std::lock_guard<std::mutex> lock(m_dispose_mtx);
                 m_handler_active = false;
                 if (m_dispose_me) {
-                    uwsgi_task::dispose(worker);
+                    dispose_gcc_workaround(worker);
                 }
+                delete handler;
             });
 
         try {
@@ -137,6 +140,11 @@ public:
         } else {
             m_dispose_me = true;
         }
+    }
+
+    // GCC 4.8 workaround: gcc 4.8 has problems when accessing base class methods from lambdas via this pointer.
+    void dispose_gcc_workaround(worker* worker) {
+        uwsgi_task::dispose(worker);
     }
 
 private:
