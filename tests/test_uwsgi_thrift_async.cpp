@@ -130,6 +130,8 @@ void test_uwsgi_thrift_async::request_finish_exec_timeout() {
     } catch (TTransportException& e) {
         CPPUNIT_ASSERT_MESSAGE(e.what(), std::string(e.what()).find("timed out") != std::string::npos);
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 }
 
 void test_uwsgi_thrift_async::request(std::string url) {

@@ -76,16 +76,20 @@ public:
                 }
                 response().set_header("Content-Type", "application/x-thrift");
                 // Make sure we run in the context of a worker thread
-                worker->signal_call([this] (struct ev_loop*) {
-                        send_response();
-                    });
+                if (!error_code()) {
+                    worker->signal_call([this] (struct ev_loop*) {
+                            send_response();
+                        });
+                }
                 // GCC 4.8.2 shows some weired behavior uning lambdas here. After deleting the handler ptr this
                 // is set to 0x0. Also accessing base class methods is broken and leads to internal compiler
                 // errors.
-                std::lock_guard<std::mutex> lock(m_dispose_mtx);
+                m_dispose_mtx.lock();
                 m_handler_active = false;
                 if (m_dispose_me) {
-                    dispose_gcc_workaround(worker);
+                    delete this;
+                } else {
+                    m_dispose_mtx.unlock();
                 }
                 delete handler;
             });
@@ -133,18 +137,14 @@ public:
         out_protocol->getTransport()->flush();
     }
 
-    virtual void dispose(worker* worker) {
-        std::lock_guard<std::mutex> lock(m_dispose_mtx);
+    virtual void dispose(worker* /*worker*/) {
+        m_dispose_mtx.lock();
         if (!m_handler_active) {
-            uwsgi_task::dispose(worker);
+            delete this;
         } else {
             m_dispose_me = true;
+            m_dispose_mtx.unlock();
         }
-    }
-
-    // GCC 4.8 workaround: gcc 4.8 has problems when accessing base class methods from lambdas via this pointer.
-    void dispose_gcc_workaround(worker* worker) {
-        uwsgi_task::dispose(worker);
     }
 
 private:
