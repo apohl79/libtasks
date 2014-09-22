@@ -18,7 +18,6 @@
  */
 
 #include <arpa/inet.h>
-#include <cassert>
 #include <cstring>
 #include <fcntl.h>
 #include <netdb.h>
@@ -36,7 +35,9 @@ namespace net {
 socket::socket(socket_type type) : m_fd(-1), m_type(type) {
     if (socket_type::UDP == m_type) {
         m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
-        assert(m_fd > 0);
+        if (m_fd < 0) {
+            throw socket_exception("socket failed: " + std::string(std::strerror(errno)));
+        }
     } else if (socket_type::TCP != m_type) {
         terr("socket: Invalid socket_type! Using TCP.");
         m_type = socket_type::TCP;
@@ -45,7 +46,15 @@ socket::socket(socket_type type) : m_fd(-1), m_type(type) {
 
 void socket::listen(std::string path, int queue_size) {
     m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
-    assert(m_fd > 0);
+    if (m_fd < 0) {
+        throw socket_exception("socket failed: " + std::string(std::strerror(errno)));
+    }
+#ifndef _OS_LINUX_
+    int on = 1;
+    if (setsockopt(m_fd, SOL_SOCKET, SO_NOSIGPIPE, (char *) &on, sizeof(on))) {
+        throw socket_exception("setsockopt SO_NOSIGPIPE failed: " + std::string(std::strerror(errno)));
+    }
+#endif
     if (!m_blocking) {
         if (fcntl(m_fd, F_SETFL, fcntl(m_fd, F_GETFL, 0) | O_NONBLOCK)) {
             throw socket_exception("fcntl failed: " + std::string(std::strerror(errno)));
@@ -91,10 +100,17 @@ void socket::bind(int port, std::string ip, bool udp) {
     int on = 1;
     m_type = socket_type::UDP;
     m_fd = ::socket(AF_INET, udp ? SOCK_DGRAM: SOCK_STREAM, 0);
-    assert(m_fd > 0);
-    if (setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on))) {
-        throw socket_exception("setsockopt failed: " + std::string(std::strerror(errno)));
+    if (m_fd < 0) {
+        throw socket_exception("socket failed: " + std::string(std::strerror(errno)));
     }
+    if (setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on))) {
+        throw socket_exception("setsockopt SO_REUSEADDR failed: " + std::string(std::strerror(errno)));
+    }
+#ifndef _OS_LINUX_
+    if (setsockopt(m_fd, SOL_SOCKET, SO_NOSIGPIPE, (char *) &on, sizeof(on))) {
+        throw socket_exception("setsockopt SO_NOSIGPIPE failed: " + std::string(std::strerror(errno)));
+    }
+#endif
     if (!m_blocking) {
         if (fcntl(m_fd, F_SETFL, fcntl(m_fd, F_GETFL, 0) | O_NONBLOCK)) {
             throw socket_exception("fcntl failed: " + std::string(std::strerror(errno)));
@@ -136,7 +152,15 @@ socket socket::accept() {
 
 void socket::connect(std::string path) {
     m_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
-    assert(m_fd > 0);
+    if (m_fd < 0) {
+        throw socket_exception("socket failed: " + std::string(std::strerror(errno)));
+    }
+#ifndef _OS_LINUX_
+    int on = 1;
+    if (setsockopt(m_fd, SOL_SOCKET, SO_NOSIGPIPE, (char *) &on, sizeof(on))) {
+        throw socket_exception("setsockopt SO_NOSIGPIPE failed: " + std::string(std::strerror(errno)));
+    }
+#endif
     struct sockaddr_un addr;
     bzero(&addr, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
@@ -166,7 +190,15 @@ void socket::connect(std::string host, int port) {
         throw socket_exception("Host " + host + " not found");
     }
     m_fd = ::socket(AF_INET, SOCK_STREAM, 0);
-    assert(m_fd > 0);
+    if (m_fd < 0) {
+        throw socket_exception("socket failed: " + std::string(std::strerror(errno)));
+    }
+#ifndef _OS_LINUX_    
+    int on = 1;
+    if (setsockopt(m_fd, SOL_SOCKET, SO_NOSIGPIPE, (char *) &on, sizeof(on))) {
+        throw socket_exception("setsockopt SO_NOSIGPIPE failed: " + std::string(std::strerror(errno)));
+    }
+#endif
     struct sockaddr_in addr;
     bzero(&addr, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
@@ -197,7 +229,9 @@ std::streamsize socket::write(const char* data, std::size_t len,
                               int port, std::string ip) {
     if (m_fd == -1 && udp()) {
         m_fd = ::socket(AF_INET, SOCK_DGRAM, 0);
-        assert(m_fd > 0);
+        if (m_fd < 0) {
+            throw socket_exception("socket failed: " + std::string(std::strerror(errno)));
+        }
     }
     if (port > -1) {
         init_sockaddr(port, ip);
@@ -208,7 +242,7 @@ std::streamsize socket::write(const char* data, std::size_t len,
         addr = (const sockaddr*) m_addr.get();
         addr_len = sizeof(*addr);
     }
-    ssize_t bytes = sendto(m_fd, data, len, SENDTO_FLAGS, addr, addr_len);
+    ssize_t bytes = sendto(m_fd, data, len, SEND_RECV_FLAGS, addr, addr_len);
     if (bytes < 0 && errno != EAGAIN) {
         std::stringstream s;
         s << "error writing to client file descriptor " << m_fd << ": " << std::strerror(errno);
@@ -224,7 +258,7 @@ std::streamsize socket::read(char* data, std::size_t len) {
         addr = (sockaddr*) m_addr.get();
         addr_len = sizeof(*addr);
     }
-    ssize_t bytes = recvfrom(m_fd, data, len, RECVFROM_FLAGS, addr, &addr_len);
+    ssize_t bytes = recvfrom(m_fd, data, len, SEND_RECV_FLAGS, addr, &addr_len);
     if (bytes < 0 && errno != EAGAIN) {
         std::stringstream s;
         s << "error reading from client file descriptor " << m_fd << ": " << std::strerror(errno);

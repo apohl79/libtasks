@@ -28,12 +28,10 @@
 
 #include <tasks/tasks_exception.h>
 
-#ifdef __linux__
-#define SENDTO_FLAGS MSG_NOSIGNAL
-#define RECVFROM_FLAGS MSG_NOSIGNAL
+#ifdef _OS_LINUX_
+#define SEND_RECV_FLAGS MSG_NOSIGNAL
 #else
-#define SENDTO_FLAGS 0
-#define RECVFROM_FLAGS 0
+#define SEND_RECV_FLAGS 0
 #endif
 
 struct sockaddr_in;
