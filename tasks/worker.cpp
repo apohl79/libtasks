@@ -121,11 +121,15 @@ void tasks_async_callback(struct ev_loop* loop, ev_async* w, int /* events */) {
     assert(nullptr != worker);
     task_func_queue_t* tfq = (tasks::task_func_queue_t*) w->data;
     if (nullptr != tfq) {
-        std::lock_guard<std::mutex> lock(tfq->mutex);
+        std::queue<task_func_t> qcpy;
+        {
+            std::lock_guard<std::mutex> lock(tfq->mutex);
+            tfq->queue.swap(qcpy);
+        }
         // Execute all queued functors
-        while (!tfq->queue.empty()) {
-            assert(worker->signal_call(tfq->queue.front()));
-            tfq->queue.pop();
+        while (!qcpy.empty()) {
+            assert(worker->signal_call(qcpy.front()));
+            qcpy.pop();
         }
     }
 }

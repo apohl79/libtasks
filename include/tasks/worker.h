@@ -80,7 +80,7 @@ public:
 
     inline std::string get_string() const {
         std::ostringstream os;
-        os << "worker(" << (unsigned int) m_id << ")";
+        os << "worker(" << this << "," << (unsigned int) m_id << ")";
         return os.str();
     }
 
@@ -114,8 +114,10 @@ public:
 
     inline void async_call(task_func_t f) {
         task_func_queue_t* tfq = (task_func_queue_t*) m_signal_watcher.data;
-        std::lock_guard<std::mutex> lock(tfq->mutex);
-        tfq->queue.push(f);
+        {
+            std::lock_guard<std::mutex> lock(tfq->mutex);
+            tfq->queue.push(f);
+        }
         ev_async_send(loop_ptr(), &m_signal_watcher);
     }
 
@@ -143,7 +145,9 @@ public:
     }
 
     static void add_async_event(event e) {
-        dispatcher::instance()->last_worker()->async_call([e] (struct ev_loop* loop) {
+        worker* w = dispatcher::instance()->last_worker();
+        tdbg("worker: adding async event to worker " << w << std::endl);
+        w->async_call([e] (struct ev_loop* loop) {
                 // get the executing worker
                 worker* worker = (tasks::worker*) ev_userdata(loop);
                 worker->add_event(e);
