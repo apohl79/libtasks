@@ -27,10 +27,11 @@
 #include <thrift/TApplicationException.h>
 #include <unordered_set>
 #include <future>
+#include <sstream>
 
 #include <tasks/net/uwsgi_task.h>
 #include <tasks/net/uwsgi_thrift_transport.h>
-#include <tasks/exec.h>
+#include <tasks/logging.h>
 
 using namespace apache::thrift;
 using namespace apache::thrift::protocol;
@@ -46,9 +47,19 @@ public:
     typedef uwsgi_thrift_transport<http_response> out_transport_type;
     typedef TBinaryProtocol protocol_type;
 
-    uwsgi_thrift_async_processor(net::socket& s) : uwsgi_task(s) {}
+    uwsgi_thrift_async_processor(net::socket& s) : uwsgi_task(s) {
+        tdbg(get_string() << ": ctor" << std::endl);
+    }
 
-    virtual ~uwsgi_thrift_async_processor() {}
+    virtual ~uwsgi_thrift_async_processor() {
+        tdbg(get_string() << ": dtor" << std::endl);
+    }
+
+    inline std::string get_string() const {
+        std::ostringstream os;
+        os << "uwsgi_thrift_async_processor(" << this << ")";
+        return os.str();
+    }
 
     virtual bool handle_request() {
         boost::shared_ptr<in_transport_type> in_transport(new in_transport_type(request_p()));
@@ -58,17 +69,21 @@ public:
 
         // Process message
         worker* worker = worker::get();
-        auto handler = new handler_type();
-        handler->set_uwsgi_task(this);
-        handler->on_finish([this, handler, worker, out_protocol] {
-                if (handler->error()) {
-                    write_thrift_error(std::string("Handler Error: ") + handler->error_message(),
-                                       handler->service_name(), out_protocol);
+        m_handler.reset(new handler_type());
+        tdbg(get_string() << ": created handler " << m_handler.get() << std::endl);
+        m_handler->set_uwsgi_task(this);
+        m_handler->on_finish([this, worker, out_protocol] {
+                if (m_handler->error()) {
+                    tdbg(get_string() << ": handler " << m_handler.get() << " finished with error(" << m_handler->error() << "): "
+                         << m_handler->error_message() << std::endl);
+                    write_thrift_error(std::string("Handler Error: ") + m_handler->error_message(),
+                                       m_handler->service_name(), out_protocol);
                 } else {
+                    tdbg(get_string() << ": handler " << m_handler.get() << " finished with no error" << std::endl);
                     // Fill the response back in.
-                    out_protocol->writeMessageBegin(handler->service_name(), T_REPLY, m_seqid);
-                    handler->result_base().__isset.success = true;
-                    handler->result_base().write(out_protocol.get());
+                    out_protocol->writeMessageBegin(m_handler->service_name(), T_REPLY, m_seqid);
+                    m_handler->result_base().__isset.success = true;
+                    m_handler->result_base().write(out_protocol.get());
                     out_protocol->writeMessageEnd();
                     out_protocol->getTransport()->writeEnd();
                     out_protocol->getTransport()->flush();
@@ -81,17 +96,8 @@ public:
                             send_response();
                         });
                 }
-                // GCC 4.8.2 shows some weired behavior uning lambdas here. After deleting the handler ptr this
-                // is set to 0x0. Also accessing base class methods is broken and leads to internal compiler
-                // errors.
-                m_dispose_mtx.lock();
-                m_handler_active = false;
-                if (m_dispose_me) {
-                    delete this;
-                } else {
-                    m_dispose_mtx.unlock();
-                }
-                delete handler;
+                // Allow cleanup now
+                enable_dispose();
             });
 
         try {
@@ -99,10 +105,10 @@ public:
             TMessageType mtype;
             in_protocol->readMessageBegin(fname, mtype, m_seqid);
             if (mtype != protocol::T_CALL && mtype != protocol::T_ONEWAY) {
-                write_thrift_error("invalid message type", handler->service_name(), out_protocol);
+                write_thrift_error("invalid message type", m_handler->service_name(), out_protocol);
                 send_thrift_response();
-            } else if (fname != handler->service_name()) {
-                write_thrift_error("invalid method name", handler->service_name(), out_protocol);
+            } else if (fname != m_handler->service_name()) {
+                write_thrift_error("invalid method name", m_handler->service_name(), out_protocol);
                 send_thrift_response();
             } else {
                 // read the args from the request
@@ -110,11 +116,14 @@ public:
                 args->read(in_protocol.get());
                 in_protocol->readMessageEnd();
                 in_protocol->getTransport()->readEnd();
-                m_handler_active = true;
-                handler->service(args);
+                // Make sure the object is kept until the m_handler finishes
+                disable_dispose();
+                // Call the m_handler
+                tdbg(get_string() << ": calling service on handler " << m_handler.get() << std::endl);
+                m_handler->service(args);
             }
         } catch (TException& e) {
-            write_thrift_error(std::string("TException: ") + e.what(), handler->service_name(), out_protocol);
+            write_thrift_error(std::string("TException: ") + e.what(), m_handler->service_name(), out_protocol);
             send_thrift_response();
         }
 
@@ -137,21 +146,9 @@ public:
         out_protocol->getTransport()->flush();
     }
 
-    virtual void dispose(worker* /*worker*/) {
-        m_dispose_mtx.lock();
-        if (!m_handler_active) {
-            delete this;
-        } else {
-            m_dispose_me = true;
-            m_dispose_mtx.unlock();
-        }
-    }
-
 private:
     int32_t m_seqid = 0;
-    std::mutex m_dispose_mtx;
-    bool m_handler_active = false;
-    bool m_dispose_me = false;
+    std::unique_ptr<handler_type> m_handler;
 };
 
 } // net

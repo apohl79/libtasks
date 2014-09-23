@@ -17,6 +17,7 @@
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <tasks/dispatcher.h>
 #include <tasks/net_io_task.h>
 #include <tasks/worker.h>
 #include <tasks/net/acceptor.h>
@@ -71,7 +72,7 @@ void test_socket::tcp() {
     
     // create acceptor
     auto srv = new tasks::net::acceptor<echo_handler>(port);
-    tasks::net_io_task::add_task(srv);
+    tasks::dispatcher::instance()->add_event_task(srv);
 
     // create client
     tasks::net::socket client0;
@@ -96,8 +97,8 @@ void test_socket::tcp() {
     CPPUNIT_ASSERT(strncmp(data.c_str(), &buf[0], data.length()) == 0);
 
     client1.close();
-    
-    srv->dispose();
+
+    tasks::dispatcher::instance()->remove_event_task(srv);
 }
 
 void test_socket::udp() {
@@ -141,7 +142,7 @@ void test_socket::unix() {
     
     // create acceptor
     auto srv = new tasks::net::acceptor<echo_handler>(sockfile);
-    tasks::net_io_task::add_task(srv);
+    tasks::dispatcher::instance()->add_event_task(srv);
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
     
@@ -170,7 +171,7 @@ void test_socket::unix() {
 
     client1.close();
     
-    srv->dispose();
+    tasks::dispatcher::instance()->remove_event_task(srv);
 
     unlink(sockfile.c_str());
 }

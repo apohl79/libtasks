@@ -68,7 +68,6 @@ void net_io_task::set_events(int events) {
 }
 
 void net_io_task::start_watcher(worker* worker) {
-    sync_worker(worker);
     assert(m_watcher_initialized);
     worker->signal_call([this] (struct ev_loop* loop) {
         if (!ev_is_active(m_io.get())) {
@@ -79,7 +78,6 @@ void net_io_task::start_watcher(worker* worker) {
 }
 
 void net_io_task::stop_watcher(worker* worker) {
-    sync_worker(worker);
     assert(m_watcher_initialized);
     worker->signal_call([this] (struct ev_loop* loop) {
             if (ev_is_active(m_io.get())) {
@@ -90,7 +88,6 @@ void net_io_task::stop_watcher(worker* worker) {
 }
 
 void net_io_task::update_watcher(worker* worker) {
-    sync_worker(worker);
     assert(m_watcher_initialized);
     if (m_change_pending) {
         worker->signal_call([this] (struct ev_loop* loop) {
@@ -109,9 +106,10 @@ void net_io_task::update_watcher(worker* worker) {
 }
 
 void net_io_task::add_task(worker* worker, net_io_task* task) {
-    worker->signal_call([task] (struct ev_loop* loop) {
+    worker->signal_call([worker, task] (struct ev_loop* loop) {
             tdbg(task->get_string() << ": adding net_io_task" << std::endl);
             task->init_watcher();
+            task->assign_worker(worker);
             ev_io_start(loop, task->watcher());
         });
 }
@@ -121,15 +119,6 @@ void net_io_task::add_task(net_io_task* task) {
 }
 
 void net_io_task::dispose(worker* worker) {
-    if (nullptr == worker) {
-        if (nullptr != m_worker) {
-            // multi loop mode: use the worker the task is assigned to
-            worker = m_worker;
-        } else {
-            // single loop mode: use the last executing worker
-            worker = dispatcher::instance()->last_worker();
-        }
-    }
     worker->signal_call([this] (struct ev_loop* loop) {
             if (ev_is_active(watcher())) {
                 tdbg(get_string() << ": disposing net_io_task" << std::endl);

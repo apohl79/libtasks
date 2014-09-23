@@ -21,9 +21,11 @@
 #include <tasks/worker.h>
 #include <tasks/executor.h>
 #include <tasks/task.h>
+#include <tasks/logging.h>
+#include <tasks/disposable.h>
 #include <tasks/event_task.h>
 #include <tasks/exec_task.h>
-#include <tasks/logging.h>
+#include <tasks/cleanup_task.h>
 #include <cassert>
 #include <cstdarg>
 #include <chrono>
@@ -171,6 +173,26 @@ void dispatcher::add_free_worker(uint8_t id) {
     m_workers_busy.set(id);
 }
 
+worker* dispatcher::get_worker_by_task(event_task* task) {
+    worker* worker = task->assigned_worker();
+    if (nullptr == worker) {
+        switch (m_run_mode) {
+        case mode::MULTI_LOOP:
+            // In multi loop mode we pick a worker by round robin
+            worker = m_workers[m_rr_worker_id++ % m_num_workers].get();
+            break;
+        default:
+            // In single loop mode use the current executing worker
+            worker = worker::get();
+            // If we get called from some other thread than a worker we pick the last active worker
+            if (nullptr == worker) {
+                worker = m_workers[m_last_worker_id].get();
+            }
+        }
+    }
+    return worker;
+}
+
 void dispatcher::print_worker_stats() const {
     for (auto &w: m_workers) {
         terr(w->get_string() << ": number of handled events is " << w->events_count() << std::endl);
@@ -183,45 +205,97 @@ void dispatcher::add_task(task* task) {
         terr("dispatcher: You have to call dispatcher::start() before dispatcher::add_task()" << std::endl);
         assert(false);
     }
-    // The pass object is no exec_task. Now find a worker to add it.
+    // The pass object is no event_task. Now find a worker to add it.
     try {
         event_task* et = dynamic_cast<event_task*>(task);
         if (nullptr != et) {
-            tdbg("add_task: adding event_task " << task << std::endl);
-            worker* worker = nullptr;
-            switch (m_run_mode) {
-            case mode::MULTI_LOOP:
-                // In multi loop mode we pick a worker by round robin
-                worker = m_workers[m_rr_worker_id++ % m_num_workers].get();
-                break;
-            default:
-                // In single loop mode use the current worker
-                worker = worker::get();
-                // If we get called from some other thread than a worker we pick the last active worker
-                if (nullptr == worker) {
-                    worker = m_workers[m_last_worker_id].get();
-                }
-            }
-            et->init_watcher();
-            et->start_watcher(worker);
+            add_event_task(et);
             return;
         }
-    } catch (std::exception& e) {}
+    } catch (std::exception&) {}
 
     // Check if the passed task object is an exec_task.
     try {
         exec_task* et = dynamic_cast<exec_task*>(task);
         if (nullptr != et) {
-            tdbg("add_task: adding exec_task " << task << std::endl);
-            // We got an exec_task passed. We have to find a free executor or create a new one.
-            std::shared_ptr<executor> executor = free_executor();
-            executor->add_task(et);
+            add_exec_task(et);
             return;
         }
-    } catch (std::exception& e) {}
+    } catch (std::exception&) {}
 
-    terr("dispatcher: task " << task << " is not an event_task* nor exec_task*!");
+    terr("dispatcher: task " << task << " is not an event_task nor an exec_task!");
     assert(false);
+}
+
+void dispatcher::add_event_task(event_task* task) {
+    worker* worker = get_worker_by_task(task);
+    tdbg("add_event_task: adding event_task " << task << " using worker " << worker << std::endl);
+    task->init_watcher();
+    task->assign_worker(worker);
+    task->start_watcher(worker);
+}
+
+void dispatcher::add_exec_task(exec_task* task) {
+    std::shared_ptr<executor> executor = free_executor();
+    tdbg("add_exec_task: adding exec_task " << task << " using executor " << executor << std::endl);
+    executor->add_task(task);
+}
+
+void dispatcher::remove_task(task* task) {
+    // The pass object is no event_task. Now find a worker to add it.
+    try {
+        event_task* et = dynamic_cast<event_task*>(task);
+        if (nullptr != et) {
+            remove_event_task(et);
+            return;
+        }
+    } catch (std::exception&) {}
+
+    // Check if the passed task object is an exec_task.
+    try {
+        exec_task* et = dynamic_cast<exec_task*>(task);
+        if (nullptr != et) {
+            remove_exec_task(et);
+            return;
+        }
+    } catch (std::exception&) {}
+
+    terr("dispatcher: task " << task << " is not an event_task nor an exec_task!");
+    assert(false);
+}
+
+void dispatcher::remove_event_task(event_task* task) {
+    // If the task implements the disposable interface, we check if it is ready to be
+    // disposed.
+    try {
+        disposable* disp = dynamic_cast<disposable*>(task);
+        if (nullptr != disp) {
+            worker* worker = get_worker_by_task(task);
+            tdbg("remove_event_task: deposing event_task " << task << " using worker " << worker << std::endl);
+            if (disp->can_dispose()) {
+                disp->dispose(worker);
+            } else {
+                // Try later
+                cleanup_task* ct = new cleanup_task(disp);
+                tdbg("remove_event_task: delayed deposing event_task " << disp << "/" << task << " using worker " << worker
+                     << " and cleanup_task " << ct << std::endl);
+                ct->init_watcher();
+                ct->assign_worker(worker);
+                ct->start_watcher(worker);
+            }
+            return;
+        }
+    } catch (std::exception&) {}
+    // No disposable, so delete the task now.
+    tdbg("remove_event_task: deleting event_task " << task << std::endl);
+    delete task;
+}
+
+
+void dispatcher::remove_exec_task(exec_task* task) {
+    tdbg("remove_exec_task: deleting exec_task " << task << std::endl);
+    // No disposable object support yet. Just delete it.
+    delete task;
 }
 
 } // tasks

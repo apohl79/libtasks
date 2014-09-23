@@ -32,10 +32,8 @@ public:
     typedef std::function<void (worker* worker)> finish_func_worker_t;
     typedef std::function<void ()> finish_func_void_t;
     struct finish_func_t {
-        finish_func_t(finish_func_worker_t f)
-            : m_type(0), m_f_worker(f) {}
-        finish_func_t(finish_func_void_t f)
-            : m_type(1), m_f_void(f) {}
+        finish_func_t(finish_func_worker_t f) : m_type(0), m_f_worker(f) {}
+        finish_func_t(finish_func_void_t f) : m_type(1), m_f_void(f) {}
 
         void operator()(worker* worker) {
             switch (m_type) {
@@ -55,12 +53,6 @@ public:
 
     virtual ~task() {}
 
-    // Dispose is called to delete a task. Instead of calling delete directly we enable for hooking
-    // in here. This is required by the net_io_task for example to stop the watcher.
-    virtual void dispose(worker* /* worker */ = nullptr) {
-        delete this;
-    }
-
     inline bool auto_delete() const {
         return m_auto_delete;
     }
@@ -69,12 +61,7 @@ public:
         m_auto_delete = false;
     }
 
-    inline void finish(worker* worker = nullptr) {
-        for (auto f : m_finish_funcs) {
-            f(worker);
-        }
-        dispose(worker);
-    }
+    void finish(worker* worker = nullptr);
 
     // If a task finishes it can execute callback functions. Note that no locks will be used at this
     // level.

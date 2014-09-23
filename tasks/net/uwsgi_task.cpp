@@ -33,6 +33,7 @@ bool uwsgi_task::handle_event(tasks::worker* /* worker */, int revents) {
             if (m_request.done()) {
                 if (UWSGI_VARS == m_request.header().modifier1) {
                     success = handle_request();
+                    m_request.clear();
                 } else {
                     // No suuport for anything else for now
                     std::ostringstream os;
@@ -57,6 +58,7 @@ bool uwsgi_task::handle_event(tasks::worker* /* worker */, int revents) {
             }
         }
     } catch (tasks::tasks_exception& e) {
+        tdbg("uwsgi_task(" << this << "): exception: " << e.what() << std::endl);
         set_error(e.what());
         success = false;
     }

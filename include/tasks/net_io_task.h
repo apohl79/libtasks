@@ -20,10 +20,10 @@
 #ifndef _TASKS_NET_IO_TASK_H_
 #define _TASKS_NET_IO_TASK_H_
 
-#include <tasks/worker.h>
 #include <tasks/event_task.h>
-#include <tasks/net/socket.h>
+#include <tasks/disposable.h>
 #include <tasks/ev_wrapper.h>
+#include <tasks/net/socket.h>
 #include <memory>
 #include <sstream>
 
@@ -31,7 +31,7 @@ namespace tasks {
 
 class worker;
 
-class net_io_task : public event_task {
+class net_io_task : public event_task, public disposable {
 public:
     net_io_task(int events);
     net_io_task(net::socket& socket, int events);
@@ -64,7 +64,8 @@ public:
     // Udate a watcher in the context of the given worker
     void update_watcher(worker* worker);
 
-    virtual void dispose(worker* worker = nullptr);
+    // Stop the watcher before being deleted
+    virtual void dispose(worker* worker);
 
     // This public method can be used to add io tasks outside of a worker thread
     // context. If io tasks should be created within the context of a worker thread,
@@ -83,22 +84,6 @@ private:
     net::socket m_socket;
     int m_events = EV_UNDEF;
     bool m_change_pending = false;
-
-    // For multi loop mode a task does not leave the context of a worker thread, as
-    // each thread runs its own event loop. That also means this worker has to execute
-    // a dispose action. As dispose allows to be called from outside of the task
-    // system (a non worker thread context), a handle to the worker the task belongs
-    // to is needed.
-    worker* m_worker = nullptr;
-
-    inline void sync_worker(worker* worker) {
-        if (dispatcher::mode::MULTI_LOOP == dispatcher::run_mode()) {
-            if (nullptr == m_worker) {
-                m_worker = worker;
-            }
-            assert(worker == m_worker);
-        }
-    }
 };
 
 } // tasks

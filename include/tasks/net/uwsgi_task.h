@@ -25,6 +25,7 @@
 #include <string>
 #include <cassert>
 
+#include <tasks/worker.h>
 #include <tasks/net_io_task.h>
 #include <tasks/net/uwsgi_request.h>
 #include <tasks/net/http_response.h>
@@ -75,7 +76,6 @@ protected:
     http_response m_response;
 
     inline void finish_request() {
-        m_request.clear();
         m_response.clear();
     }
 };

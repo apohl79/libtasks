@@ -37,7 +37,10 @@ namespace tasks {
 class worker;
 class executor;
 class task;
-    
+class event_task;
+class exec_task;
+class disposable;
+
 struct signal_data;
     
 class dispatcher {
@@ -121,6 +124,13 @@ public:
 
     // Add a task to the system.
     void add_task(task* task);
+    void add_event_task(event_task* task);
+    void add_exec_task(exec_task* task);
+
+    // Remove a task from the system.
+    void remove_task(task* task);
+    void remove_event_task(event_task* task);
+    void remove_exec_task(exec_task* task);
 
     // This methods start the system and block until terminate() gets called.
     [[deprecated]]
@@ -170,6 +180,8 @@ private:
 
     ev_signal m_signal;
     bool m_started = false;
+
+    worker* get_worker_by_task(event_task* task);
 };
 
 } // tasks

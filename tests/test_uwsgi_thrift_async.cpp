@@ -31,6 +31,8 @@
 
 #include "test_uwsgi_thrift_async.h"
 
+std::atomic<bool> g_finished(false);
+
 void ip_service_async1::service(std::shared_ptr<args_t> args) {
     key_value_type kv;
     id_name_type val;
@@ -58,6 +60,7 @@ void ip_service_async1::service(std::shared_ptr<args_t> args) {
 }
 
 void ip_service_async2::service(std::shared_ptr<args_t> args) {
+    tdbg("ip_service_async2::service(" << this << "): entered" << std::endl);
     // run in a different thread
     tasks::exec([this, args] {
             key_value_type kv;
@@ -83,6 +86,8 @@ void ip_service_async2::service(std::shared_ptr<args_t> args) {
                 set_error("wrong ip address");
             }
             finish();
+            g_finished = true;
+            tdbg("ip_service_async2::service(" << this << "): finished" << std::endl);
         });
 }
 
@@ -114,8 +119,9 @@ void test_uwsgi_thrift_async::request_finish_exec_timeout() {
         static boost::shared_ptr<TTransport> get(THttpClient* x) { return x->*(&Socket::transport_); }
     };
     boost::shared_ptr<TSocket> tsock = boost::dynamic_pointer_cast<TSocket>(Socket::get(transport.get()));
-    tsock->setRecvTimeout(100);
 
+    tsock->setRecvTimeout(100);
+    g_finished = false;
     try {
         transport->open();
 
@@ -124,14 +130,37 @@ void test_uwsgi_thrift_async::request_finish_exec_timeout() {
         response_type r;
         client.lookup(r, ip, ipv6);
 
+        CPPUNIT_ASSERT_MESSAGE("TTransportException expected", false);
+    } catch (TTransportException& e) {
+        CPPUNIT_ASSERT_MESSAGE(e.what(), std::string(e.what()).find("timed out") != std::string::npos);
         transport->close();
+    }
+
+    while (!g_finished) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    tsock->setRecvTimeout(800);
+    g_finished = false;
+    try {
+        transport->open();
+
+        int32_t ip = 123456789;
+        ipv6_type ipv6;
+        response_type r;
+        client.lookup(r, ip, ipv6);
 
         CPPUNIT_ASSERT_MESSAGE("TTransportException expected", false);
     } catch (TTransportException& e) {
         CPPUNIT_ASSERT_MESSAGE(e.what(), std::string(e.what()).find("timed out") != std::string::npos);
+        transport->close();
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    while (!g_finished) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 void test_uwsgi_thrift_async::request(std::string url) {
