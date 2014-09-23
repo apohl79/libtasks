@@ -25,6 +25,7 @@
 #include <cstring>
 
 #include <tasks/dispatcher.h>
+#include <tasks/worker.h>
 #include <tasks/logging.h>
 #include <tasks/net_io_task.h>
 #include <tasks/net/http_request.h>
