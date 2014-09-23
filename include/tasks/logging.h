@@ -35,11 +35,22 @@ extern std::mutex g_log_mutex;
 #define _LOGMUTEX
 #endif
 
-// Using the C time variants as std::put_time is not implemented yet.
+#ifndef _NO_PUT_TIME
+#define ttime_init                              \
+    std::time_t t = std::time(nullptr);         \
+    std::tm tm = *std::localtime(&t);
+#define tput_time(t, f) std::put_time(t, f)
+#else
+#define ttime_init
+#define tput_time(t, f) ""
+#endif
+
 #define tlog(s, m)                                                      \
     {                                                                   \
+        ttime_init;                                                     \
         _LOGMUTEX;                                                      \
         s << "["                                                        \
+          << tput_time(&tm, "%h %e %T") << " "                          \
           << std::setw(14)                                              \
           << std::this_thread::get_id() << " "                          \
           << std::setw(16)                                              \
