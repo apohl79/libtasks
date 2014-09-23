@@ -21,7 +21,6 @@
 #define _TASKS_EXEC_H_
 
 #include <tasks/exec_task.h>
-#include <tasks/dispatcher.h>
 
 namespace tasks {
 
@@ -34,9 +33,7 @@ namespace tasks {
  *
  * \param f The functor to execute.
  */
-inline void exec(exec_task::func_t f) {
-    dispatcher::instance()->add_task(new exec_task(f));
-}
+void exec(exec_task::func_t f);
 
 /*!
  * \brief Execute code in a separate executor thread.
@@ -49,11 +46,7 @@ inline void exec(exec_task::func_t f) {
  * \param ff The finish functor to be executed when f has been
  *           executed.
  */
-inline void exec(exec_task::func_t f, task::finish_func_void_t ff) {
-    exec_task* t = new exec_task(f);
-    t->on_finish(ff);
-    dispatcher::instance()->add_task(t);
-}
+void exec(exec_task::func_t f, task::finish_func_void_t ff);
 
 }
 
