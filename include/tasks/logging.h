@@ -35,7 +35,7 @@ extern std::mutex g_log_mutex;
 #define _LOGMUTEX
 #endif
 
-#ifndef _NO_PUT_TIME
+#ifdef _WITH_PUT_TIME
 #define ttime_init                              \
     std::time_t t = std::time(nullptr);         \
     std::tm tm = *std::localtime(&t);
