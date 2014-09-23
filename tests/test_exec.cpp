@@ -17,6 +17,7 @@
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <tasks/dispatcher.h>
 #include <tasks/exec.h>
 #include <tasks/executor.h> // for set_timeout
 #include <atomic>
