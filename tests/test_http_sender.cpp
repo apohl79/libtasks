@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -32,8 +32,10 @@ bool test_handler::handle_response(std::shared_ptr<tasks::net::http_response> re
 
 void test_http_sender::requests() {
     auto* sender = new tasks::net::http_sender<test_handler>();
+    std::atomic<bool> done(false);
+
     // Notify us when the tasks is finished
-    sender->on_finish([this]{ m_cond.notify_one(); });
+    sender->on_finish([&]{ done = true; m_cond.notify_one(); });
 
     // Connect to remote
     bool send_ok = true;
@@ -48,7 +50,7 @@ void test_http_sender::requests() {
 
     // wait for the response
     std::unique_lock<std::mutex> lock(m_mutex);
-    m_cond.wait(lock);
+    m_cond.wait_for(lock, std::chrono::seconds(2), [&done] { return done.load(); });
     lock.unlock();
 
     // Check returned data
@@ -56,6 +58,7 @@ void test_http_sender::requests() {
     CPPUNIT_ASSERT_MESSAGE(std::string("g_content_type = ") + g_content_type, g_content_type == "text/html");
 
     // Second run
+    done = false;
     sender = new tasks::net::http_sender<test_handler>();
     sender->on_finish([this]{ m_cond.notify_one(); });
 
@@ -70,8 +73,8 @@ void test_http_sender::requests() {
     CPPUNIT_ASSERT_MESSAGE(std::string("send error: ") + error, send_ok);
 
     std::unique_lock<std::mutex> lock2(m_mutex);
-    m_cond.wait(lock2);
+    m_cond.wait_for(lock2, std::chrono::seconds(2), [&done] { return done.load(); });
+
     CPPUNIT_ASSERT_MESSAGE(std::string("g_status_code = ") + std::to_string(g_status_code), g_status_code == 404);
     CPPUNIT_ASSERT_MESSAGE(std::string("g_content_type = ") + g_content_type, g_content_type == "text/html");
 }
-
