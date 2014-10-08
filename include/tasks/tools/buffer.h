@@ -88,13 +88,11 @@ public:
     }
 
     inline void move_ptr_write(std::size_t s) {
-        auto owrite = offset_write();
-        setp(ptr(owrite + s), ptr_end());
+        setp(ptr_write() + s, ptr_end());
     }
 
     inline void move_ptr_read(std::size_t s) {
-        auto oread = offset_read();
-        setg(ptr_begin(), ptr(oread + s), ptr_end());
+        setg(ptr_begin(), ptr_read() + s, ptr_end());
     }
 
     inline void move_ptr_write_abs(std::size_t pos) {
@@ -118,14 +116,18 @@ public:
     }
 
     inline void set_size(std::size_t s) {
-        auto oread = offset_read();
-        auto owrite = offset_write();
+        auto p_rd = ptr_read();
+        auto p_wr = ptr_write();
         if (m_buffer.size() < s) {
+            auto oread = offset_read();
+            auto owrite = offset_write();
             m_buffer.resize(s + 1024);
+            p_rd = ptr(oread);
+            p_wr = ptr(owrite);
         }
         m_size = s;
-        setg(ptr_begin(), ptr(oread), ptr_end());
-        setp(ptr(owrite), ptr_end());
+        setg(ptr_begin(), p_rd, ptr_end());
+        setp(p_wr, ptr_end());
      }
 
     inline void shrink() {
