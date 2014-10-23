@@ -63,32 +63,32 @@ void ip_service_async2::service(std::shared_ptr<args_t> args) {
     tdbg("ip_service_async2::service(" << this << "): entered" << std::endl);
     // run in a different thread
     tasks::exec([this, args] {
-            key_value_type kv;
-            id_name_type val;
-            if (args->ipv4 == 123456789) {
-                kv.key.id = 1;
-                kv.key.name = "city";
-                val.id = 123456;
-                val.name = "Berlin";
-                kv.values.push_back(val);
-                result().key_values.push_back(kv);
-                kv.values.clear();
+        key_value_type kv;
+        id_name_type val;
+        if (args->ipv4 == 123456789) {
+            kv.key.id = 1;
+            kv.key.name = "city";
+            val.id = 123456;
+            val.name = "Berlin";
+            kv.values.push_back(val);
+            result().key_values.push_back(kv);
+            kv.values.clear();
 
-                kv.key.id = 2;
-                kv.key.name = "country";
-                val.id = 3345677;
-                val.name = "Germany";
-                kv.values.push_back(val);
-                result().key_values.push_back(kv);
-                // it could take some time to finish, so sleep a bit
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            } else {
-                set_error("wrong ip address");
-            }
-            finish();
-            g_finished = true;
-            tdbg("ip_service_async2::service(" << this << "): finished" << std::endl);
-        });
+            kv.key.id = 2;
+            kv.key.name = "country";
+            val.id = 3345677;
+            val.name = "Germany";
+            kv.values.push_back(val);
+            result().key_values.push_back(kv);
+            // it could take some time to finish, so sleep a bit
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        } else {
+            set_error("wrong ip address");
+        }
+        finish();
+        g_finished = true;
+        tdbg("ip_service_async2::service(" << this << "): finished" << std::endl);
+    });
 }
 
 void test_uwsgi_thrift_async::request_finish_in_worker_ctx() {

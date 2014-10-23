@@ -65,34 +65,30 @@ struct event {
 };
 
 class worker {
-public:
+   public:
     worker(uint8_t id, std::unique_ptr<loop_t>& loop);
     virtual ~worker();
 
-    inline uint8_t id() const {
-        return m_id;
-    }
+    inline uint8_t id() const { return m_id; }
 
     // Provide access to the executing worker thread
-    static worker* get() {
-        return m_worker_ptr;
-    }
+    static worker* get() { return m_worker_ptr; }
 
     inline std::string get_string() const {
         std::ostringstream os;
-        os << "worker(" << this << "," << (unsigned int) m_id << ")";
+        os << "worker(" << this << "," << (unsigned int)m_id << ")";
         return os.str();
     }
 
     inline struct ev_loop* loop_ptr() const {
         struct ev_loop* loop = nullptr;
         switch (dispatcher::run_mode()) {
-        case dispatcher::mode::MULTI_LOOP:
-            assert(nullptr != m_loop);
-            loop = m_loop->ptr;
-            break;
-        default:
-            loop = ev_default_loop(0);
+            case dispatcher::mode::MULTI_LOOP:
+                assert(nullptr != m_loop);
+                loop = m_loop->ptr;
+                break;
+            default:
+                loop = ev_default_loop(0);
         }
         return loop;
     }
@@ -113,7 +109,7 @@ public:
     }
 
     inline void async_call(task_func_t f) {
-        task_func_queue_t* tfq = (task_func_queue_t*) m_signal_watcher.data;
+        task_func_queue_t* tfq = (task_func_queue_t*)m_signal_watcher.data;
         {
             std::lock_guard<std::mutex> lock(tfq->mutex);
             tfq->queue.push(f);
@@ -140,26 +136,22 @@ public:
         tdbg(get_string() << ": thread done" << std::endl);
     }
 
-    inline void add_event(event e) {
-        m_events_queue.push(e);
-    }
+    inline void add_event(event e) { m_events_queue.push(e); }
 
     static void add_async_event(event e) {
         worker* w = dispatcher::instance()->last_worker();
         tdbg("worker: adding async event to worker " << w << std::endl);
-        w->async_call([e] (struct ev_loop* loop) {
-                // get the executing worker
-                worker* worker = (tasks::worker*) ev_userdata(loop);
-                worker->add_event(e);
-            });
+        w->async_call([e](struct ev_loop* loop) {
+            // get the executing worker
+            worker* worker = (tasks::worker*)ev_userdata(loop);
+            worker->add_event(e);
+        });
     }
 
     void handle_io_event(ev_io* watcher, int revents);
     void handle_timer_event(ev_timer* watcher);
 
-    inline uint64_t events_count() const {
-        return m_events_count;
-    }
+    inline uint64_t events_count() const { return m_events_count; }
 
 #if ENABLE_ADD_TIME == 1
     // If you need some internal time measurements local to the worker threads, you can
@@ -180,8 +172,7 @@ public:
         m_time_total[idx] += t;
         m_time_count[idx]++;
         if (m_time_count[idx] == 5000) {
-            std::cout << get_string() << " time(" << idx << "): avg "
-                      << (double) m_time_total[idx] / 5000 << " micros"
+            std::cout << get_string() << " time(" << idx << "): avg " << (double)m_time_total[idx] / 5000 << " micros"
                       << std::endl;
             m_time_total[idx] = 0;
             m_time_count[idx] = 0;
@@ -189,7 +180,7 @@ public:
     }
 #endif
 
-private:
+   private:
 #ifndef __clang__
     thread_local static worker* m_worker_ptr;
 #else
@@ -229,11 +220,11 @@ private:
 };
 
 /* CALLBACKS */
-template<typename EV_t>
+template <typename EV_t>
 void tasks_event_callback(struct ev_loop* loop, EV_t w, int e) {
-    worker* worker = (tasks::worker*) ev_userdata(loop);
+    worker* worker = (tasks::worker*)ev_userdata(loop);
     assert(nullptr != worker);
-    event_task* task = (tasks::event_task*) w->data;
+    event_task* task = (tasks::event_task*)w->data;
     task->stop_watcher(worker);
     event event = {task, e};
     worker->add_event(event);
@@ -241,6 +232,6 @@ void tasks_event_callback(struct ev_loop* loop, EV_t w, int e) {
 
 void tasks_async_callback(struct ev_loop* loop, ev_async* w, int events);
 
-} // tasks
+}  // tasks
 
-#endif // _TASKS_WORKER_H_
+#endif  // _TASKS_WORKER_H_

@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -39,7 +39,7 @@ namespace tasks {
 namespace net {
 
 class uwsgi_task : public tasks::net_io_task {
-public:
+   public:
     uwsgi_task(net::socket& sock) : tasks::net_io_task(sock, EV_READ) {}
     virtual ~uwsgi_task() {}
 
@@ -48,21 +48,13 @@ public:
     // A request handler needs to implement this
     virtual bool handle_request() = 0;
 
-    inline uwsgi_request& request() {
-        return m_request;
-    }
+    inline uwsgi_request& request() { return m_request; }
 
-    inline uwsgi_request* request_p() {
-        return &m_request;
-    }
+    inline uwsgi_request* request_p() { return &m_request; }
 
-    inline http_response& response() {
-        return m_response;
-    }
+    inline http_response& response() { return m_response; }
 
-    inline http_response* response_p() {
-        return &m_response;
-    }
+    inline http_response* response_p() { return &m_response; }
 
     inline void send_response() {
         worker* w = worker::get();
@@ -71,16 +63,14 @@ public:
         update_watcher(w);
     }
 
-protected:
+   protected:
     uwsgi_request m_request;
     http_response m_response;
 
-    inline void finish_request() {
-        m_response.clear();
-    }
+    inline void finish_request() { m_response.clear(); }
 };
 
-} // net
-} // tasks
+}  // net
+}  // tasks
 
-#endif // _UWSGI_TASK_H_
+#endif  // _UWSGI_TASK_H_

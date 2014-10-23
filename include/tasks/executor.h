@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -34,7 +34,7 @@ namespace tasks {
 class executor {
     friend class test_exec;
 
-public:
+   public:
     executor();
 
     virtual ~executor() {
@@ -43,14 +43,10 @@ public:
         tdbg("terminated" << std::endl);
     }
 
-    inline bool busy() const {
-        return m_busy;
-    }
+    inline bool busy() const { return m_busy; }
 
-    inline void set_busy() {
-        m_busy = true;
-    }
-    
+    inline void set_busy() { m_busy = true; }
+
     inline void add_task(exec_task* t) {
         tdbg("add_task " << t << std::endl);
         {
@@ -66,15 +62,11 @@ public:
         m_cond.notify_one();
     }
 
-    inline bool terminated() const {
-        return m_term;
-    }
+    inline bool terminated() const { return m_term; }
 
-    static void set_timeout(uint32_t timeout) {
-        m_timeout = timeout;
-    }
+    static void set_timeout(uint32_t timeout) { m_timeout = timeout; }
 
-private:
+   private:
     std::atomic<bool> m_busy;
     std::atomic<bool> m_term;
     exec_task* m_task = nullptr;
@@ -86,6 +78,6 @@ private:
     void run();
 };
 
-} // tasks
+}  // tasks
 
-#endif // _TASKS_EXECUTOR_H_
+#endif  // _TASKS_EXECUTOR_H_

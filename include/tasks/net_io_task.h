@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -32,7 +32,7 @@ namespace tasks {
 class worker;
 
 class net_io_task : public event_task, public disposable {
-public:
+   public:
     net_io_task(int events);
     net_io_task(net::socket& socket, int events);
     virtual ~net_io_task();
@@ -43,17 +43,11 @@ public:
         return os.str();
     }
 
-    inline net::socket& socket() {
-        return m_socket;
-    }
+    inline net::socket& socket() { return m_socket; }
 
-    inline int events() const {
-        return m_events;
-    }
+    inline int events() const { return m_events; }
 
-    inline ev_io* watcher() const {
-        return m_io.get();
-    }
+    inline ev_io* watcher() const { return m_io.get(); }
 
     void init_watcher();
 
@@ -73,12 +67,12 @@ public:
     // pointer.
     static void add_task(net_io_task* task);
 
-protected:
+   protected:
     void set_socket(net::socket& socket);
     void set_events(int events);
     void add_task(worker* worker, net_io_task* task);
 
-private:
+   private:
     std::unique_ptr<ev_io> m_io;
     bool m_watcher_initialized = false;
     net::socket m_socket;
@@ -86,6 +80,6 @@ private:
     bool m_change_pending = false;
 };
 
-} // tasks
+}  // tasks
 
-#endif // _TASKS_NET_IO_TASK_H_
+#endif  // _TASKS_NET_IO_TASK_H_

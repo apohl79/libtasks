@@ -35,7 +35,10 @@ void test_http_sender::requests() {
     std::atomic<bool> done(false);
 
     // Notify us when the tasks is finished
-    sender->on_finish([&]{ done = true; m_cond.notify_one(); });
+    sender->on_finish([&] {
+        done = true;
+        m_cond.notify_one();
+    });
 
     // Connect to remote
     bool send_ok = true;
@@ -60,7 +63,7 @@ void test_http_sender::requests() {
     // Second run
     done = false;
     sender = new tasks::net::http_sender<test_handler>();
-    sender->on_finish([this]{ m_cond.notify_one(); });
+    sender->on_finish([this] { m_cond.notify_one(); });
 
     send_ok = true;
     error = "";

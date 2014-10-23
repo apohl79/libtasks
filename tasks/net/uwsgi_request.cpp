@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -30,7 +30,7 @@ namespace net {
 std::string uwsgi_request::NO_VAL;
 
 void uwsgi_request::read_header(socket& sock) {
-    std::streamsize bytes = sock.read((char*) &m_header, sizeof(m_header));
+    std::streamsize bytes = sock.read((char*)&m_header, sizeof(m_header));
     if (bytes != sizeof(m_header)) {
         throw uwsgi_exception("uwsgi_request: error reading header");
     }
@@ -88,9 +88,9 @@ void uwsgi_request::read_data(socket& sock) {
 void uwsgi_request::parse_vars() {
     std::size_t pos = 0;
     while (pos < m_data_buffer.size()) {
-        uint16_t key_len= *((uint16_t*) m_data_buffer.ptr(pos));
+        uint16_t key_len = *((uint16_t*)m_data_buffer.ptr(pos));
         uint16_t key_start = pos + 2;
-        uint16_t val_len = *((uint16_t*) m_data_buffer.ptr(key_start + key_len));
+        uint16_t val_len = *((uint16_t*)m_data_buffer.ptr(key_start + key_len));
         uint16_t val_start = key_start + key_len + 2;
         if (key_len && val_len) {
             m_vars.insert(std::make_pair(std::string(m_data_buffer.ptr(key_start), key_len),
@@ -100,5 +100,5 @@ void uwsgi_request::parse_vars() {
     }
 }
 
-} // net
-} // tasks
+}  // net
+}  // tasks

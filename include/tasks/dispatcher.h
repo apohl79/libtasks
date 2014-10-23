@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -33,7 +33,7 @@
 #include <tasks/logging.h>
 
 namespace tasks {
-        
+
 class worker;
 class executor;
 class task;
@@ -42,15 +42,12 @@ class exec_task;
 class disposable;
 
 struct signal_data;
-    
+
 class dispatcher {
     friend class test_exec;
 
-public:
-    enum class mode {
-        SINGLE_LOOP,
-        MULTI_LOOP
-    };
+   public:
+    enum class mode { SINGLE_LOOP, MULTI_LOOP };
 
     dispatcher(uint8_t num_workers);
 
@@ -77,16 +74,13 @@ public:
     //   MULTI_LOOP
     static void init_run_mode(mode m) {
         if (nullptr != m_instance) {
-            terr("ERROR: dispatcher::init_run_mode must be called before anything else!"
-                 << std::endl);
+            terr("ERROR: dispatcher::init_run_mode must be called before anything else!" << std::endl);
             assert(false);
         }
         m_run_mode = m;
     }
 
-    static mode run_mode() {
-        return m_run_mode;
-    }
+    static mode run_mode() { return m_run_mode; }
 
     static std::shared_ptr<dispatcher> instance() {
         if (nullptr == m_instance) {
@@ -118,9 +112,7 @@ public:
 
     // Returns the last promoted worker from the workers vector. This can be useful
     // to add tasks in situations where a worker handle is not available.
-    inline worker* last_worker() {
-        return m_workers[m_last_worker_id].get();
-    }
+    inline worker* last_worker() { return m_workers[m_last_worker_id].get(); }
 
     // Add a task to the system.
     void add_task(task* task);
@@ -133,16 +125,15 @@ public:
     void remove_exec_task(exec_task* task);
 
     // This methods start the system and block until terminate() gets called.
-    [[deprecated]]
-    void run(int num, ...);
+    [[deprecated]] void run(int num, ...);
     void run(std::vector<tasks::task*>& tasks);
 
     // Start the event loop. Do not block.
     void start();
-    
+
     // Wait for the dispatcher to finish
     void join();
-    
+
     // Terminate the workers and die.
     inline void terminate() {
         m_term = true;
@@ -150,8 +141,8 @@ public:
     }
 
     void print_worker_stats() const;
-    
-private:
+
+   private:
     static std::shared_ptr<dispatcher> m_instance;
     std::atomic<bool> m_term;
 
@@ -174,7 +165,7 @@ private:
     // across the workers.
     std::atomic<uint8_t> m_rr_worker_id;
 
-    // Condition variable/mutex used to wait for finishing up 
+    // Condition variable/mutex used to wait for finishing up
     std::condition_variable m_finish_cond;
     std::mutex m_finish_mutex;
 
@@ -184,6 +175,6 @@ private:
     worker* get_worker_by_task(event_task* task);
 };
 
-} // tasks
+}  // tasks
 
-#endif // _TASKS_DISPATCHER_H_
+#endif  // _TASKS_DISPATCHER_H_

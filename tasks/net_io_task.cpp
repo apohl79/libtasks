@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -69,7 +69,7 @@ void net_io_task::set_events(int events) {
 
 void net_io_task::start_watcher(worker* worker) {
     assert(m_watcher_initialized);
-    worker->signal_call([this] (struct ev_loop* loop) {
+    worker->signal_call([this](struct ev_loop* loop) {
         if (!ev_is_active(m_io.get())) {
             tdbg(get_string() << ": starting watcher" << std::endl);
             ev_io_start(loop, m_io.get());
@@ -79,53 +79,51 @@ void net_io_task::start_watcher(worker* worker) {
 
 void net_io_task::stop_watcher(worker* worker) {
     assert(m_watcher_initialized);
-    worker->signal_call([this] (struct ev_loop* loop) {
-            if (ev_is_active(m_io.get())) {
-                tdbg(get_string() << ": stopping watcher" << std::endl);
-                ev_io_stop(loop, m_io.get());
-            }
-        });
+    worker->signal_call([this](struct ev_loop* loop) {
+        if (ev_is_active(m_io.get())) {
+            tdbg(get_string() << ": stopping watcher" << std::endl);
+            ev_io_stop(loop, m_io.get());
+        }
+    });
 }
 
 void net_io_task::update_watcher(worker* worker) {
     assert(m_watcher_initialized);
     if (m_change_pending) {
-        worker->signal_call([this] (struct ev_loop* loop) {
-                tdbg(get_string() << ": updating watcher" << std::endl);
-                bool active = ev_is_active(m_io.get());
-                if (active) {
-                    ev_io_stop(loop, m_io.get());
-                }
-                ev_io_set(m_io.get(), m_socket.fd(), m_events);
-                if (active) {
-                    ev_io_start(loop, m_io.get());
-                }
-            });
+        worker->signal_call([this](struct ev_loop* loop) {
+            tdbg(get_string() << ": updating watcher" << std::endl);
+            bool active = ev_is_active(m_io.get());
+            if (active) {
+                ev_io_stop(loop, m_io.get());
+            }
+            ev_io_set(m_io.get(), m_socket.fd(), m_events);
+            if (active) {
+                ev_io_start(loop, m_io.get());
+            }
+        });
         m_change_pending = false;
     }
 }
 
 void net_io_task::add_task(worker* worker, net_io_task* task) {
-    worker->signal_call([worker, task] (struct ev_loop* loop) {
-            tdbg(task->get_string() << ": adding net_io_task" << std::endl);
-            task->init_watcher();
-            task->assign_worker(worker);
-            ev_io_start(loop, task->watcher());
-        });
+    worker->signal_call([worker, task](struct ev_loop* loop) {
+        tdbg(task->get_string() << ": adding net_io_task" << std::endl);
+        task->init_watcher();
+        task->assign_worker(worker);
+        ev_io_start(loop, task->watcher());
+    });
 }
 
-void net_io_task::add_task(net_io_task* task) {
-    dispatcher::instance()->add_task(task);
-}
+void net_io_task::add_task(net_io_task* task) { dispatcher::instance()->add_task(task); }
 
 void net_io_task::dispose(worker* worker) {
-    worker->signal_call([this] (struct ev_loop* loop) {
-            if (ev_is_active(watcher())) {
-                tdbg(get_string() << ": disposing net_io_task" << std::endl);
-                ev_io_stop(loop, watcher());
-            }
-            delete this;
-        });
+    worker->signal_call([this](struct ev_loop* loop) {
+        if (ev_is_active(watcher())) {
+            tdbg(get_string() << ": disposing net_io_task" << std::endl);
+            ev_io_stop(loop, watcher());
+        }
+        delete this;
+    });
 }
 
-} // tasks
+}  // tasks

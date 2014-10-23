@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -24,20 +24,17 @@
 
 namespace tasks {
 
-disk_io_task::disk_io_task(int fd, int events, tools::buffer* buf)
-    : m_fd(fd), m_events(events), m_buf(buf) {
+disk_io_task::disk_io_task(int fd, int events, tools::buffer* buf) : m_fd(fd), m_events(events), m_buf(buf) {
     tdbg(get_string() << ": ctor" << std::endl);
 }
 
-disk_io_task::~disk_io_task() {
-    tdbg(get_string() << ": dtor" << std::endl);
-}
+disk_io_task::~disk_io_task() { tdbg(get_string() << ": dtor" << std::endl); }
 
 std::shared_future<std::streamsize> disk_io_task::op() {
     // run the io op in a separate thread
     std::promise<std::streamsize> bytes_promise;
     std::async(std::launch::async, [this, &bytes_promise] {
-            switch (m_events) {
+        switch (m_events) {
             case EV_READ:
                 tdbg(get_string() << ": calling read()" << std::endl);
                 m_bytes = read(m_fd, m_buf->ptr_write(), m_buf->to_write());
@@ -54,12 +51,12 @@ std::shared_future<std::streamsize> disk_io_task::op() {
             default:
                 m_bytes = -1;
                 set_error(get_string() + std::string(": events has to be either EV_READ or EV_WRITE"));
-            }
-            bytes_promise.set_value(m_bytes);
-            // fire an event
-            event e = {this, m_events};
-            worker::add_async_event(e);
-        });
+        }
+        bytes_promise.set_value(m_bytes);
+        // fire an event
+        event e = {this, m_events};
+        worker::add_async_event(e);
+    });
     return bytes_promise.get_future();
 }
 
@@ -75,10 +72,10 @@ void disk_io_task::dispose(worker* worker) {
     if (nullptr == worker) {
         worker = dispatcher::instance()->last_worker();
     }
-    worker->signal_call([this] (struct ev_loop* /* loop */) {
-            tdbg(get_string() << ": disposing disk_io_task" << std::endl);
-            delete this;
-        });
+    worker->signal_call([this](struct ev_loop* /* loop */) {
+        tdbg(get_string() << ": disposing disk_io_task" << std::endl);
+        delete this;
+    });
 }
 
-} // tasks
+}  // tasks

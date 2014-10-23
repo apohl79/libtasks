@@ -28,8 +28,7 @@ thread_local worker* worker::m_worker_ptr = nullptr;
 __thread worker* worker::m_worker_ptr = nullptr;
 #endif
 
-worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop)
-    : m_id(id), m_term(false), m_leader(false) {
+worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop) : m_id(id), m_term(false), m_leader(false) {
     // Initialize and add the threads async watcher
     ev_async_init(&m_signal_watcher, tasks_async_callback);
     m_signal_watcher.data = new task_func_queue_t;
@@ -50,7 +49,7 @@ worker::worker(uint8_t id, std::unique_ptr<loop_t>& loop)
 
 worker::~worker() {
     tdbg(get_string() << ": dtor" << std::endl);
-    task_func_queue_t* tfq = (task_func_queue_t*) m_signal_watcher.data;
+    task_func_queue_t* tfq = (task_func_queue_t*)m_signal_watcher.data;
     delete tfq;
 }
 
@@ -65,9 +64,9 @@ void worker::run() {
             tdbg(get_string() << ": waiting..." << std::endl);
             std::unique_lock<std::mutex> lock(m_work_mutex);
             // Use wait_for to check the term flag
-            while (m_work_cond.wait_for(lock, std::chrono::milliseconds(100)) == std::cv_status::timeout
-                   && !m_leader
-                   && !m_term) {}
+            while (m_work_cond.wait_for(lock, std::chrono::milliseconds(100)) == std::cv_status::timeout && !m_leader &&
+                   !m_term) {
+            }
         }
 
         // Became leader, so execute the event loop
@@ -117,9 +116,9 @@ void worker::run() {
 }
 
 void tasks_async_callback(struct ev_loop* loop, ev_async* w, int /* events */) {
-    worker* worker = (tasks::worker*) ev_userdata(loop);
+    worker* worker = (tasks::worker*)ev_userdata(loop);
     assert(nullptr != worker);
-    task_func_queue_t* tfq = (tasks::task_func_queue_t*) w->data;
+    task_func_queue_t* tfq = (tasks::task_func_queue_t*)w->data;
     if (nullptr != tfq) {
         std::queue<task_func_t> qcpy;
         {
@@ -134,4 +133,4 @@ void tasks_async_callback(struct ev_loop* loop, ev_async* w, int /* events */) {
     }
 }
 
-} // tasks
+}  // tasks

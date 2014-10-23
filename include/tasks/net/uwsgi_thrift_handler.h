@@ -27,37 +27,27 @@
 namespace tasks {
 namespace net {
 
-template<class thrift_interface_type>
+template <class thrift_interface_type>
 class uwsgi_thrift_handler : public thrift_interface_type {
-public:
-    inline void set_uwsgi_task(uwsgi_task* t) {
-        m_uwsgi_task = t;
-    }
+   public:
+    inline void set_uwsgi_task(uwsgi_task* t) { m_uwsgi_task = t; }
 
-protected:
+   protected:
     // Provide some wrappers to access the request and response structures
     // from a service call implementation.
-    inline uwsgi_request& request() {
-        return m_uwsgi_task->request();
-    }
+    inline uwsgi_request& request() { return m_uwsgi_task->request(); }
 
-    inline uwsgi_request* request_p() {
-        return m_uwsgi_task->request_p();
-    }
+    inline uwsgi_request* request_p() { return m_uwsgi_task->request_p(); }
 
-    inline http_response& response() {
-        return m_uwsgi_task->response();
-    }
+    inline http_response& response() { return m_uwsgi_task->response(); }
 
-    inline http_response* response_p() {
-        return m_uwsgi_task->response_p();
-    }
+    inline http_response* response_p() { return m_uwsgi_task->response_p(); }
 
-private:
+   private:
     uwsgi_task* m_uwsgi_task = nullptr;
 };
 
-} // net
-} // tasks
+}  // net
+}  // tasks
 
-#endif // _UWSGI_THRIFT_HANDLER_H_
+#endif  // _UWSGI_THRIFT_HANDLER_H_

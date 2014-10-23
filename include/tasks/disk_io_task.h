@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -31,7 +31,7 @@ namespace tasks {
 class worker;
 
 class disk_io_task : public event_task {
-public:
+   public:
     disk_io_task(int fd, int events, tools::buffer* buf);
     virtual ~disk_io_task();
 
@@ -41,9 +41,7 @@ public:
         return os.str();
     }
 
-    inline std::streamsize bytes() const {
-        return m_bytes;
-    }
+    inline std::streamsize bytes() const { return m_bytes; }
 
     virtual bool handle_event(worker* worker, int events);
     virtual void init_watcher() {}
@@ -57,7 +55,7 @@ public:
         return task->op();
     }
 
-private:
+   private:
     int m_fd = -1;
     int m_events = EV_UNDEF;
     tools::buffer* m_buf = nullptr;
@@ -66,6 +64,6 @@ private:
     std::shared_future<std::streamsize> op();
 };
 
-} // tasks
+}  // tasks
 
-#endif // _TASKS_IO_TASK_H_
+#endif  // _TASKS_IO_TASK_H_

@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -36,8 +36,8 @@ extern std::mutex g_log_mutex;
 #endif
 
 #ifdef _WITH_PUT_TIME
-#define ttime_init                              \
-    std::time_t t = std::time(nullptr);         \
+#define ttime_init                      \
+    std::time_t t = std::time(nullptr); \
     std::tm tm = *std::localtime(&t);
 #define tput_time(t, f) std::put_time(t, f)
 #else
@@ -45,21 +45,13 @@ extern std::mutex g_log_mutex;
 #define tput_time(t, f) ""
 #endif
 
-#define tlog(s, m)                                                      \
-    {                                                                   \
-        ttime_init;                                                     \
-        _LOGMUTEX;                                                      \
-        s << "["                                                        \
-          << tput_time(&tm, "%h %e %T") << " "                          \
-          << std::setw(14)                                              \
-          << std::this_thread::get_id() << " "                          \
-          << std::setw(16)                                              \
-          << __FILE__ << ":"                                            \
-          << std::setw(3)                                               \
-          << std::setfill('0')                                          \
-          << __LINE__ << "] "                                           \
-          << std::setfill(' ')                                          \
-          << m << std::flush;                                           \
+#define tlog(s, m)                                                                                          \
+    {                                                                                                       \
+        ttime_init;                                                                                         \
+        _LOGMUTEX;                                                                                          \
+        s << "[" << tput_time(&tm, "%h %e %T") << " " << std::setw(14) << std::this_thread::get_id() << " " \
+          << std::setw(16) << __FILE__ << ":" << std::setw(3) << std::setfill('0') << __LINE__ << "] "      \
+          << std::setfill(' ') << m << std::flush;                                                          \
     }
 
 #ifdef _DEBUG_OUTPUT
@@ -70,4 +62,4 @@ extern std::mutex g_log_mutex;
 
 #define terr(m) tlog(std::clog, m)
 
-#endif // _TASKS_LOGGING_H_
+#endif  // _TASKS_LOGGING_H_

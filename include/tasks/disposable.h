@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -33,32 +33,26 @@ namespace tasks {
  * to delete the task.
  */
 class disposable {
-public:
+   public:
     disposable() : m_can_dispose(true) {}
     virtual ~disposable() {}
-    
+
     /*!
      * \brief Check if a task can be disposed or not.
      *
      * \return True if the task can be disposed. False otherwise.
      */
-    inline bool can_dispose() const {
-        return m_can_dispose;
-    }
+    inline bool can_dispose() const { return m_can_dispose; }
 
     /*!
      * \brief Mark a task for being not disposable.
      */
-    inline void disable_dispose() {
-        m_can_dispose = false;
-    }
+    inline void disable_dispose() { m_can_dispose = false; }
 
     /*!
      * \brief Mark a task for being disposable.
      */
-    inline void enable_dispose() {
-        m_can_dispose = true;
-    }
+    inline void enable_dispose() { m_can_dispose = true; }
 
     /*! \brief Dispose an object.
      *
@@ -68,10 +62,10 @@ public:
      */
     virtual void dispose(worker*) = 0;
 
-private:
+   private:
     std::atomic<bool> m_can_dispose;
 };
 
-} // tasks
+}  // tasks
 
-#endif // _TASKS_DISPOSABLE_H_
+#endif  // _TASKS_DISPOSABLE_H_

@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -40,27 +40,21 @@ namespace tasks {
 namespace net {
 
 class http_exception : public tasks::tasks_exception {
-public:
+   public:
     http_exception(std::string what) : tasks::tasks_exception(what) {}
 };
 
 class http_base {
-public:
+   public:
     static const std::string NO_VAL;
 
-    http_base()
-        : m_content_istream(&m_content_buffer),
-          m_content_ostream(&m_content_buffer) {}
-    
+    http_base() : m_content_istream(&m_content_buffer), m_content_ostream(&m_content_buffer) {}
+
     virtual ~http_base() {}
 
-    inline void set_state(io_state state) {
-        m_state = state;
-    }
+    inline void set_state(io_state state) { m_state = state; }
 
-    inline io_state state() const {
-        return m_state;
-    }
+    inline io_state state() const { return m_state; }
 
     inline void set_header(std::string header, std::string value) {
         m_headers[header] = value;
@@ -77,9 +71,7 @@ public:
         return NO_VAL;
     }
 
-    inline std::size_t content_length() const {
-        return m_content_length;
-    }
+    inline std::size_t content_length() const { return m_content_length; }
 
     inline const char* content_p() const {
         if (m_content_length) {
@@ -88,40 +80,28 @@ public:
         return nullptr;
     }
 
-    inline std::size_t write(std::string s) {
-        return m_content_buffer.write(s.c_str(), s.length());
-    }
+    inline std::size_t write(std::string s) { return m_content_buffer.write(s.c_str(), s.length()); }
 
-    inline std::size_t write(const char* data, std::size_t size) {
-        return m_content_buffer.write(data, size);
-    }
+    inline std::size_t write(const char* data, std::size_t size) { return m_content_buffer.write(data, size); }
 
-    inline std::size_t read(char* data, std::size_t size) {
-        return m_content_buffer.read(data, size);
-    }
+    inline std::size_t read(char* data, std::size_t size) { return m_content_buffer.read(data, size); }
 
-    inline std::istream& content_istream() {
-        return m_content_istream;
-    }
+    inline std::istream& content_istream() { return m_content_istream; }
 
-    inline std::ostream& content_ostream() {
-        return m_content_ostream;
-    }
+    inline std::ostream& content_ostream() { return m_content_ostream; }
 
     virtual void prepare_data_buffer() = 0;
-    
+
     void write_data(socket& sock);
 
     inline void print() const {
-        for (auto &kv : m_headers) {
+        for (auto& kv : m_headers) {
             std::cout << kv.first << ": " << kv.second << std::endl;
         }
         std::cout << content_p();
     }
 
-    inline bool done() const {
-        return m_state == io_state::DONE;
-    }
+    inline bool done() const { return m_state == io_state::DONE; }
 
     virtual void clear() {
         m_data_buffer.clear();
@@ -132,8 +112,8 @@ public:
         }
         m_state = io_state::READY;
     }
-    
-protected:
+
+   protected:
     tasks::tools::buffer m_data_buffer;
     tasks::tools::buffer m_content_buffer;
     io_state m_state = io_state::READY;
@@ -146,7 +126,7 @@ protected:
     void write_content(socket& sock);
 };
 
-} // net
-} // tasks
+}  // net
+}  // tasks
 
-#endif // _HTTP_BASE_H_
+#endif  // _HTTP_BASE_H_

@@ -36,18 +36,15 @@ std::shared_ptr<dispatcher> dispatcher::m_instance = nullptr;
 dispatcher::mode dispatcher::m_run_mode = mode::SINGLE_LOOP;
 
 static void handle_signal(struct ev_loop* /* loop */, ev_signal* sig, int /* revents */) {
-    dispatcher* d = (dispatcher*) sig->data;
+    dispatcher* d = (dispatcher*)sig->data;
     assert(nullptr != d);
     d->terminate();
 }
 
 dispatcher::dispatcher(uint8_t num_workers)
-    : m_term(false),
-      m_num_workers(num_workers),
-      m_workers_busy(tools::bitset(m_num_workers)),
-      m_rr_worker_id(0) {
+    : m_term(false), m_num_workers(num_workers), m_workers_busy(tools::bitset(m_num_workers)), m_rr_worker_id(0) {
     // Create workers
-    tdbg("dispatcher: number of cpus is " << (int) m_num_workers << std::endl);
+    tdbg("dispatcher: number of cpus is " << (int)m_num_workers << std::endl);
     // Setup signal handlers
     ev_signal_init(&m_signal, handle_signal, SIGINT);
     m_signal.data = this;
@@ -122,8 +119,8 @@ void dispatcher::start() {
 
 void dispatcher::join() {
     std::unique_lock<std::mutex> lock(m_finish_mutex);
-    while (!m_term &&
-           m_finish_cond.wait_for(lock, std::chrono::milliseconds(1000)) == std::cv_status::timeout) {}
+    while (!m_term && m_finish_cond.wait_for(lock, std::chrono::milliseconds(1000)) == std::cv_status::timeout) {
+    }
     tdbg("dispatcher: terminating workers" << std::endl);
     for (auto w : m_workers) {
         w->terminate();
@@ -169,7 +166,7 @@ std::shared_ptr<executor> dispatcher::free_executor() {
 }
 
 void dispatcher::add_free_worker(uint8_t id) {
-    tdbg("dispatcher: add_free_worker(" << (unsigned int) id << ")" << std::endl);
+    tdbg("dispatcher: add_free_worker(" << (unsigned int)id << ")" << std::endl);
     m_workers_busy.set(id);
 }
 
@@ -177,24 +174,24 @@ worker* dispatcher::get_worker_by_task(event_task* task) {
     worker* worker = task->assigned_worker();
     if (nullptr == worker) {
         switch (m_run_mode) {
-        case mode::MULTI_LOOP:
-            // In multi loop mode we pick a worker by round robin
-            worker = m_workers[m_rr_worker_id++ % m_num_workers].get();
-            break;
-        default:
-            // In single loop mode use the current executing worker
-            worker = worker::get();
-            // If we get called from some other thread than a worker we pick the last active worker
-            if (nullptr == worker) {
-                worker = m_workers[m_last_worker_id].get();
-            }
+            case mode::MULTI_LOOP:
+                // In multi loop mode we pick a worker by round robin
+                worker = m_workers[m_rr_worker_id++ % m_num_workers].get();
+                break;
+            default:
+                // In single loop mode use the current executing worker
+                worker = worker::get();
+                // If we get called from some other thread than a worker we pick the last active worker
+                if (nullptr == worker) {
+                    worker = m_workers[m_last_worker_id].get();
+                }
         }
     }
     return worker;
 }
 
 void dispatcher::print_worker_stats() const {
-    for (auto &w: m_workers) {
+    for (auto& w : m_workers) {
         terr(w->get_string() << ": number of handled events is " << w->events_count() << std::endl);
     }
 }
@@ -212,7 +209,8 @@ void dispatcher::add_task(task* task) {
             add_event_task(et);
             return;
         }
-    } catch (std::exception&) {}
+    } catch (std::exception&) {
+    }
 
     // Check if the passed task object is an exec_task.
     try {
@@ -221,7 +219,8 @@ void dispatcher::add_task(task* task) {
             add_exec_task(et);
             return;
         }
-    } catch (std::exception&) {}
+    } catch (std::exception&) {
+    }
 
     terr("dispatcher: task " << task << " is not an event_task nor an exec_task!");
     assert(false);
@@ -249,7 +248,8 @@ void dispatcher::remove_task(task* task) {
             remove_event_task(et);
             return;
         }
-    } catch (std::exception&) {}
+    } catch (std::exception&) {
+    }
 
     // Check if the passed task object is an exec_task.
     try {
@@ -258,7 +258,8 @@ void dispatcher::remove_task(task* task) {
             remove_exec_task(et);
             return;
         }
-    } catch (std::exception&) {}
+    } catch (std::exception&) {
+    }
 
     terr("dispatcher: task " << task << " is not an event_task nor an exec_task!");
     assert(false);
@@ -277,20 +278,20 @@ void dispatcher::remove_event_task(event_task* task) {
             } else {
                 // Try later
                 cleanup_task* ct = new cleanup_task(disp);
-                tdbg("remove_event_task: delayed deposing event_task " << disp << "/" << task << " using worker " << worker
-                     << " and cleanup_task " << ct << std::endl);
+                tdbg("remove_event_task: delayed deposing event_task "
+                     << disp << "/" << task << " using worker " << worker << " and cleanup_task " << ct << std::endl);
                 ct->init_watcher();
                 ct->assign_worker(worker);
                 ct->start_watcher(worker);
             }
             return;
         }
-    } catch (std::exception&) {}
+    } catch (std::exception&) {
+    }
     // No disposable, so delete the task now.
     tdbg("remove_event_task: deleting event_task " << task << std::endl);
     delete task;
 }
-
 
 void dispatcher::remove_exec_task(exec_task* task) {
     tdbg("remove_exec_task: deleting exec_task " << task << std::endl);
@@ -298,4 +299,4 @@ void dispatcher::remove_exec_task(exec_task* task) {
     delete task;
 }
 
-} // tasks
+}  // tasks

@@ -40,20 +40,16 @@ using namespace apache::thrift::transport;
 namespace tasks {
 namespace net {
 
-template<class handler_type>
+template <class handler_type>
 class uwsgi_thrift_async_processor : public uwsgi_task {
-public:
+   public:
     typedef uwsgi_thrift_transport<uwsgi_request> in_transport_type;
     typedef uwsgi_thrift_transport<http_response> out_transport_type;
     typedef TBinaryProtocol protocol_type;
 
-    uwsgi_thrift_async_processor(net::socket& s) : uwsgi_task(s) {
-        tdbg(get_string() << ": ctor" << std::endl);
-    }
+    uwsgi_thrift_async_processor(net::socket& s) : uwsgi_task(s) { tdbg(get_string() << ": ctor" << std::endl); }
 
-    virtual ~uwsgi_thrift_async_processor() {
-        tdbg(get_string() << ": dtor" << std::endl);
-    }
+    virtual ~uwsgi_thrift_async_processor() { tdbg(get_string() << ": dtor" << std::endl); }
 
     inline std::string get_string() const {
         std::ostringstream os;
@@ -73,32 +69,30 @@ public:
         tdbg(get_string() << ": created handler " << m_handler.get() << std::endl);
         m_handler->set_uwsgi_task(this);
         m_handler->on_finish([this, worker, out_protocol] {
-                if (m_handler->error()) {
-                    tdbg(get_string() << ": handler " << m_handler.get() << " finished with error(" << m_handler->error() << "): "
-                         << m_handler->error_message() << std::endl);
-                    write_thrift_error(std::string("Handler Error: ") + m_handler->error_message(),
-                                       m_handler->service_name(), out_protocol);
-                } else {
-                    tdbg(get_string() << ": handler " << m_handler.get() << " finished with no error" << std::endl);
-                    // Fill the response back in.
-                    out_protocol->writeMessageBegin(m_handler->service_name(), T_REPLY, m_seqid);
-                    m_handler->result_base().__isset.success = true;
-                    m_handler->result_base().write(out_protocol.get());
-                    out_protocol->writeMessageEnd();
-                    out_protocol->getTransport()->writeEnd();
-                    out_protocol->getTransport()->flush();
-                    response().set_status("200 OK");
-                }
-                response().set_header("Content-Type", "application/x-thrift");
-                // Make sure we run in the context of a worker thread
-                if (!error_code()) {
-                    worker->signal_call([this] (struct ev_loop*) {
-                            send_response();
-                        });
-                }
-                // Allow cleanup now
-                enable_dispose();
-            });
+            if (m_handler->error()) {
+                tdbg(get_string() << ": handler " << m_handler.get() << " finished with error(" << m_handler->error()
+                                  << "): " << m_handler->error_message() << std::endl);
+                write_thrift_error(std::string("Handler Error: ") + m_handler->error_message(),
+                                   m_handler->service_name(), out_protocol);
+            } else {
+                tdbg(get_string() << ": handler " << m_handler.get() << " finished with no error" << std::endl);
+                // Fill the response back in.
+                out_protocol->writeMessageBegin(m_handler->service_name(), T_REPLY, m_seqid);
+                m_handler->result_base().__isset.success = true;
+                m_handler->result_base().write(out_protocol.get());
+                out_protocol->writeMessageEnd();
+                out_protocol->getTransport()->writeEnd();
+                out_protocol->getTransport()->flush();
+                response().set_status("200 OK");
+            }
+            response().set_header("Content-Type", "application/x-thrift");
+            // Make sure we run in the context of a worker thread
+            if (!error_code()) {
+                worker->signal_call([this](struct ev_loop*) { send_response(); });
+            }
+            // Allow cleanup now
+            enable_dispose();
+        });
 
         try {
             std::string fname;
@@ -135,7 +129,8 @@ public:
         send_response();
     }
 
-    inline void write_thrift_error(std::string msg, std::string service_name, boost::shared_ptr<protocol_type> out_protocol) {
+    inline void write_thrift_error(std::string msg, std::string service_name,
+                                   boost::shared_ptr<protocol_type> out_protocol) {
         response().set_header("X-UWSGI_THRIFT_ASYNC_PROCESSOR_ERROR", msg);
         response().set_status("400 Bad Request");
         TApplicationException ae(msg);
@@ -146,12 +141,12 @@ public:
         out_protocol->getTransport()->flush();
     }
 
-private:
+   private:
     int32_t m_seqid = 0;
     std::unique_ptr<handler_type> m_handler;
 };
 
-} // net
-} // tasks
+}  // net
+}  // tasks
 
-#endif // _UWSGI_THRIFT_ASYNC_PROCESSOR_H_
+#endif  // _UWSGI_THRIFT_ASYNC_PROCESSOR_H_

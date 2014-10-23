@@ -28,21 +28,21 @@ namespace tasks {
 class worker;
 
 class task {
-public:
-    typedef std::function<void (worker* worker)> finish_func_worker_t;
-    typedef std::function<void ()> finish_func_void_t;
+   public:
+    typedef std::function<void(worker* worker)> finish_func_worker_t;
+    typedef std::function<void()> finish_func_void_t;
     struct finish_func_t {
         finish_func_t(finish_func_worker_t f) : m_type(0), m_f_worker(f) {}
         finish_func_t(finish_func_void_t f) : m_type(1), m_f_void(f) {}
 
         void operator()(worker* worker) {
             switch (m_type) {
-            case 0:
-                m_f_worker(worker);
-                break;
-            case 1:
-                m_f_void();
-                break;
+                case 0:
+                    m_f_worker(worker);
+                    break;
+                case 1:
+                    m_f_void();
+                    break;
             }
         }
 
@@ -53,27 +53,19 @@ public:
 
     virtual ~task() {}
 
-    inline bool auto_delete() const {
-        return m_auto_delete;
-    }
+    inline bool auto_delete() const { return m_auto_delete; }
 
-    inline void disable_auto_delete() {
-        m_auto_delete = false;
-    }
+    inline void disable_auto_delete() { m_auto_delete = false; }
 
     void finish(worker* worker = nullptr);
 
     // If a task finishes it can execute callback functions. Note that no locks will be used at this
     // level.
-    inline void on_finish(finish_func_worker_t f) {
-        m_finish_funcs.push_back(finish_func_t(f));
-    }
+    inline void on_finish(finish_func_worker_t f) { m_finish_funcs.push_back(finish_func_t(f)); }
 
-    inline void on_finish(finish_func_void_t f) {
-        m_finish_funcs.push_back(finish_func_t(f));
-    }
+    inline void on_finish(finish_func_void_t f) { m_finish_funcs.push_back(finish_func_t(f)); }
 
-private:
+   private:
     // Default behavior is to delete a task when handle_event returns false. Change this by calling
     // disable_auto_delete().
     bool m_auto_delete = true;
@@ -81,6 +73,6 @@ private:
     std::vector<finish_func_t> m_finish_funcs;
 };
 
-} // tasks
+}  // tasks
 
-#endif // _TASKS_TASK_H_
+#endif  // _TASKS_TASK_H_

@@ -2,17 +2,17 @@
  * Copyright (c) 2013-2014 Andreas Pohl <apohl79 at gmail.com>
  *
  * This file is part of libtasks.
- * 
+ *
  * libtasks is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * libtasks is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with libtasks.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -69,20 +69,20 @@ int main(int argc, char** argv) {
     // register listener for collecting the test-results
     CPPUNIT_NS::TestResultCollector collectedresults;
     testresult.addListener(&collectedresults);
- 
+
     // register listener for per-test progress output
     CPPUNIT_NS::BriefTestProgressListener progress;
     testresult.addListener(&progress);
- 
+
     // insert test-suite at test-runner by registry
     CPPUNIT_NS::TestRunner testrunner;
     testrunner.addTest(CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest());
     testrunner.run(testresult);
- 
+
     // output results in compiler-format
     CPPUNIT_NS::CompilerOutputter compileroutputter(&collectedresults, std::cerr);
     compileroutputter.write();
- 
+
     // Output XML for Jenkins CPPunit plugin
     std::ofstream xmlFileOut("libtasks_results.xml");
     CPPUNIT_NS::XmlOutputter xmlOut(&collectedresults, xmlFileOut);

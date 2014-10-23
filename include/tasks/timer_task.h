@@ -30,7 +30,7 @@ namespace tasks {
 class worker;
 
 class timer_task : public event_task {
-public:
+   public:
     timer_task(double after, double repeat);
     virtual ~timer_task();
 
@@ -40,28 +40,22 @@ public:
         return os.str();
     }
 
-    inline ev_timer* watcher() const {
-        return m_timer.get();
-    }
+    inline ev_timer* watcher() const { return m_timer.get(); }
 
-    inline double after() const {
-        return m_after;
-    }
+    inline double after() const { return m_after; }
 
-    inline double repeat() const {
-        return m_repeat;
-    }
+    inline double repeat() const { return m_repeat; }
 
     void init_watcher() {}
     void start_watcher(worker* worker);
     void stop_watcher(worker* worker);
 
-private:
+   private:
     std::unique_ptr<ev_timer> m_timer;
     double m_after = 0;
     double m_repeat = 0.;
 };
 
-} // tasks
+}  // tasks
 
-#endif // _TASKS_TIMER_TASK_H_
+#endif  // _TASKS_TIMER_TASK_H_
